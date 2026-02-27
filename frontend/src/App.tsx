@@ -1,7 +1,7 @@
-import UserView from "./views/UserView";
+import RegisterView from "./views/RegisterView";
 
 function App() {
-  return <UserView />;
+  return <RegisterView />;
 }
 
 export default App;
