@@ -1,32 +1,25 @@
-import { useState } from "react";
-import { cadastrarUsuario } from "../controllers/userController";
+import { Button, TextField, Box, Typography } from "@mui/material";
 
 export default function UserView() {
-  const [nome, setNome] = useState("");
-  const [telefone, setTelefone] = useState("");
-
-  const handleSubmit = async () => {
-    await cadastrarUsuario(nome, telefone);
-    alert("Usuário cadastrado hihiii ^^");
-  };
-
   return (
-    <div>
-      <h1>Cadastro</h1>
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h4">Cadastro de Usuário</Typography>
 
-      <input
-        placeholder="Nome"
-        onChange={(e) => setNome(e.target.value)}
+      <TextField
+        label="Nome"
+        fullWidth
+        sx={{ mt: 2 }}
       />
 
-      <input
-        placeholder="Telefone"
-        onChange={(e) => setTelefone(e.target.value)}
+      <TextField
+        label="Telefone"
+        fullWidth
+        sx={{ mt: 2 }}
       />
 
-      <button onClick={handleSubmit}>
-        Salvar
-      </button>
-    </div>
+      <Button variant="contained" sx={{ mt: 2 }}>
+        Cadastrar
+      </Button>
+    </Box>
   );
 }
