@@ -1,0 +1,25 @@
+# Build
+bin/
+obj/
+
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+.idea/
+.vscode/
+
+*.log
+
+*.tmp
+*.temp
+
+appsettings.Development.json
+
+*.nupkg
+
+publish/
+
+*.cache
