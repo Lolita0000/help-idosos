@@ -84,6 +84,7 @@ Permitir que um usuário crie um workspace, vire admin e gere um invite code par
 - [ ] Workspace criado com nome e admin corretos
 - [ ] Invite code gerado e retornado na resposta
 - [ ] Expiração do invite code respeitada
+- [ ] Testes unitários escritos
 
 ---
 
@@ -108,6 +109,7 @@ A validação de `expires_at` no `InviteCodeService` não está sendo chamada an
 **Critério de Aceite**
 - [ ] Código expirado retorna `400` com mensagem clara
 - [ ] Usuário não é inserido como membro
+- [ ] Se aplicável, testes unitários corrigidos/inseridos
 
 ---
 
@@ -127,6 +129,7 @@ A lógica de soft delete está duplicada no controller e no repository. Centrali
 **Critério de Aceite**
 - [ ] Comportamento externo não muda
 - [ ] Lógica centralizada no service
+- [ ] Testes unitários escritos/editados
 
 ---
 
@@ -137,16 +140,18 @@ A lógica de soft delete está duplicada no controller e no repository. Centrali
 ```
 
 **Objetivo**
-Cobrir os cenários de deleção de entries, garantindo que o soft delete funciona corretamente para autor e admin.
+Garantir que a cobertura de testes seja amplificada.
 
 **Escopo**
-- [ ] Unitário
+- [ ] Integração
 
 **Critério de Aceite**
 - [ ] Autor consegue deletar própria entry
 - [ ] Admin consegue deletar entry de outro membro
 - [ ] Membro sem permissão recebe erro
 - [ ] Entry deletada recebe status `deleted` e timestamp
+
+**Nota:** Toda feature **deve** conter testes unitários escritos. Salvo raras exceções.
 
 ---
 
@@ -176,7 +181,7 @@ Complementar a documentação técnica com o diagrama de classes após a modelag
 feature: implementa endpoint de criação de workspace
 fix: corrige validação de invite code expirado
 docs: adiciona CONTRIBUTING.md
-test: adiciona testes unitários para DiaryEntry
+test: adiciona testes de integração
 refactor: extrai lógica de soft delete para service
 ```
 
@@ -207,28 +212,22 @@ dotnet csharpier .
 #### Regras principais
 
 - Todo o **código em inglês**; toda a **documentação em português**
-- Variáveis locais com tipo inferível usam `var`
-- Variáveis com tipo não óbvio usam tipo explícito
+- Variáveis locais com tipo inferível usam `var`, salvo raras exceções em que o compilador necessita tipagem
 - Nomes de variáveis devem ser descritivos — sem abreviações (`userData`, não `ud`)
-- Indentação com **4 espaços** — sem tabs
-- Uma instrução por linha
-- Chaves no estilo Allman (abre e fecha em linha própria)
-- `using` fora da declaração de namespace
+- Métodos devem ter nomes descritivos do que fazem. `AddToDatabase` não é claro, `AddEntryToWorkspace` indica que uma nova entrada está sendo inserida e em qual tabela.
 - Interpolação de string em vez de concatenação (`$"Olá, {name}"`)
-- `&&` e `||` em vez de `&` e `|` em comparações
-- Membros estáticos acessados pelo nome da classe
 - Comentários XML em todos os membros públicos
 
 #### Exemplo
 
 ```csharp
 // Correto
-var workspaceName = request.Name;
-string errorMessage = GetErrorMessage(code);
+var workspaceName = request.WorkspaceName;
+var errorMessage = GetErrorMessage(code);
 
 // Errado
 var em = GetErrorMessage(code);
-String workspaceName = request.Name;
+string wkspc = request.Name;
 ```
 
 ---
@@ -243,9 +242,6 @@ npm run format
 
 #### Regras principais
 
-- Componentes em **PascalCase** (`DiaryEntry`, `WorkspaceCard`)
-- Funções e variáveis em **camelCase** (`handleSubmit`, `isLoading`)
-- Arquivos de componente com extensão `.tsx`
 - Um componente por arquivo
 - Props tipadas com `interface` ou `type` explícito — sem `any`
-- Sem lógica de negócio dentro de componentes — use controllers/services
+- Sem lógica de negócio dentro de componentes — use services
