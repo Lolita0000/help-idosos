@@ -1,0 +1,6 @@
+@EloDeCuidado_HostAddress = http://localhost:5281
+
+GET {{EloDeCuidado_HostAddress}}/api/test/get-hello
+Accept: application/json
+
+###

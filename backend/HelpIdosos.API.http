@@ -1,6 +1,0 @@
-@HelpIdosos.API_HostAddress = http://localhost:5003
-
-GET {{HelpIdosos.API_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
