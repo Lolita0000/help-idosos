@@ -14,7 +14,7 @@
 
 - [Docker](https://www.docker.com/)
 - [Node.js](https://nodejs.org/) `>= 18`
-- [.NET SDK](https://dotnet.microsoft.com/) `>= 8`
+- [.NET SDK](https://dotnet.microsoft.com/) `>= 10`
 
 ---
 
