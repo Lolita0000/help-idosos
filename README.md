@@ -53,7 +53,7 @@ dotnet restore
 dotnet run
 ```
 
-Acesse: `https://localhost:5001`
+Acesse: `https://localhost:5281`
 
 ---
 
