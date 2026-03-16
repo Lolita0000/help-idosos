@@ -217,6 +217,7 @@ dotnet csharpier .
 - Métodos devem ter nomes descritivos do que fazem. `AddToDatabase` não é claro, `AddEntryToWorkspace` indica que uma nova entrada está sendo inserida e em qual tabela.
 - Interpolação de string em vez de concatenação (`$"Olá, {name}"`)
 - Comentários XML em todos os membros públicos
+- Caso necessário deixar um todo, faça da seguinte maneira: `todo (jay) fazer x coisa`
 
 #### Exemplo
 
