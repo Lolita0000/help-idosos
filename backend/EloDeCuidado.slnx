@@ -1,6 +1,4 @@
 <Solution>
-  <Folder Name="/Tests/">
-    <Project Path="Tests/EloDeCuidadoTests/EloDeCuidadoTests.csproj" />
-  </Folder>
+  <Project Path="../backend-tests/EloDeCuidado.Tests/EloDeCuidado.Tests.csproj" />
   <Project Path="EloDeCuidado.csproj" />
 </Solution>
