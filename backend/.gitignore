@@ -16,7 +16,7 @@ obj/
 *.tmp
 *.temp
 
-appsettings.Development.json
+appsettings.json
 
 *.nupkg
 
