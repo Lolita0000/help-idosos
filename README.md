@@ -6,72 +6,28 @@
 ![Database](https://img.shields.io/badge/Database-MariaDB-teal.svg)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Lolita0000/help-idosos/graphs/commit-activity)
 
-> Aplicação de diário de saúde compartilhado, voltada para famílias que acompanham a saúde de idosos. Um workspace representa um núcleo de cuidado onde membros registram e acompanham observações de saúde ao longo do tempo.
+> Diário de saúde compartilhado para famílias e cuidadores.
 
 ---
 
-## Pré-requisitos
+O acompanhamento de saúde de um idoso envolve múltiplos atores — familiares, cuidadores, médicos — que frequentemente atuam de forma descoordenada. Informações sobre medicamentos, consultas e sintomas ficam dispersas entre anotações pessoais, mensagens de WhatsApp e memória individual de cada envolvido.
 
-- [Docker](https://www.docker.com/)
-- [Node.js](https://nodejs.org/) `>= 18`
-- [.NET SDK](https://dotnet.microsoft.com/) `>= 10`
+O **Elo de Cuidado** centraliza esse histórico em um ambiente colaborativo e seguro. Um **workspace** representa um núcleo de cuidado: uma pessoa acompanhada e os membros que registram observações ao longo do tempo. Todos têm acesso ao mesmo histórico, sempre atualizado.
 
----
-
-## Instalação
-
-```sh
-git clone https://github.com/Lolita0000/help-idosos.git
-cd help-idosos
-```
+Além do contexto familiar, o sistema serve para quem quer acompanhar a própria saúde física ou mental — um diário pessoal com estrutura e histórico persistente.
 
 ---
 
-## Como rodar
+## Stack
 
-### Com Docker
-
-```sh
-docker compose up
-```
-
-### Frontend (manual)
-
-```sh
-cd frontend
-npm install
-npm run dev
-```
-
-Acesse: `http://localhost:5173`
-
-### Backend (manual)
-
-```sh
-cd backend
-dotnet restore
-dotnet run
-```
-
-Acesse: `https://localhost:5281`
-
----
-
-## Rodar testes
-
-### Backend
-
-```sh
-cd backend
-dotnet test
-```
-
-### Frontend
-
-```sh
-cd frontend
-npm run test
-```
+| Camada | Tecnologia |
+|---|---|
+| Frontend | React + TypeScript |
+| Backend | ASP.NET Core (.NET 10) |
+| Banco de dados | MariaDB |
+| ORM | Entity Framework |
+| Infraestrutura | Docker |
+| Geração de PDF | Typst |
 
 ---
 
@@ -83,6 +39,12 @@ npm run test
 ├── frontend/   # Interface em React + TypeScript
 └── docs/       # Documentação técnica e diagramas
 ```
+
+---
+
+## Como rodar
+
+Consulte o [guia de setup](SETUP.md) para instruções de instalação e execução local e via Docker.
 
 ---
 
