@@ -8,15 +8,22 @@
 
 > Diário de saúde compartilhado para famílias e cuidadores.
 
----
+Muitas famílias dividem entre si a responsabilidade de cuidar de um idoso. Nesse processo, informações sobre medicamentos, sintomas e consultas médicas acabam espalhadas em cadernos, conversas de WhatsApp e na memória de cada envolvido. O resultado é esquecimento, falta de comunicação e dificuldade de acompanhar a evolução da saúde ao longo do tempo.
 
-O acompanhamento de saúde de um idoso envolve múltiplos atores — familiares, cuidadores, médicos — que frequentemente atuam de forma descoordenada. Informações sobre medicamentos, consultas e sintomas ficam dispersas entre anotações pessoais, mensagens de WhatsApp e memória individual de cada envolvido.
+O **Elo de Cuidado** oferece um espaço colaborativo onde familiares, cuidadores e o próprio acompanhado registram e consultam essas informações de forma organizada. Um **workspace** representa um núcleo de cuidado: uma pessoa acompanhada e os membros autorizados a registrar observações. Todos acessam o mesmo histórico, sempre atualizado.
 
-O **Elo de Cuidado** centraliza esse histórico em um ambiente colaborativo e seguro. Um **workspace** representa um núcleo de cuidado: uma pessoa acompanhada e os membros que registram observações ao longo do tempo. Todos têm acesso ao mesmo histórico, sempre atualizado.
+O sistema também serve para quem quer acompanhar a própria saúde física ou mental de forma individual, com estrutura e histórico persistente.
 
-Além do contexto familiar, o sistema serve para quem quer acompanhar a própria saúde física ou mental — um diário pessoal com estrutura e histórico persistente.
+Diferente de aplicativos como MyTherapy, Medisafe ou Google Keep, focados em uso individual, o Elo de Cuidado foi pensado para o cuidado coletivo.
 
----
+## Quem usa
+
+| Perfil | Como usa |
+|---|---|
+| **Familiar** | Registra observações, consulta o histórico e gera relatórios em PDF para médicos |
+| **Cuidador** | Registra medicamentos administrados e eventos de saúde no dia a dia |
+| **Sujeito acompanhado** | Contribui com suas próprias observações no workspace |
+| **Uso pessoal** | Cria um workspace individual para acompanhar a própria saúde |
 
 ## Stack
 
@@ -29,8 +36,6 @@ Além do contexto familiar, o sistema serve para quem quer acompanhar a própria
 | Infraestrutura | Docker |
 | Geração de PDF | Typst |
 
----
-
 ## Estrutura do repositório
 
 ```
@@ -40,13 +45,9 @@ Além do contexto familiar, o sistema serve para quem quer acompanhar a própria
 └── docs/       # Documentação técnica e diagramas
 ```
 
----
-
 ## Como rodar
 
 Consulte o [guia de setup](SETUP.md) para instruções de instalação e execução local e via Docker.
-
----
 
 ## 🤝 Contribuindo
 
