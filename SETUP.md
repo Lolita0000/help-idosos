@@ -2,16 +2,13 @@
 
 Instruções para rodar o projeto localmente ou via Docker.
 
----
-
 ## Pré-requisitos
 
 ### Instalação do Docker
 
 **Linux**
-```bash
-sudo apt install docker.io docker-compose-plugin
-```
+
+Siga a documentação oficial: https://docs.docker.com/engine/install/ubuntu/
 
 **Windows**
 
@@ -22,15 +19,13 @@ sudo apt install docker.io docker-compose-plugin
 
 > O Docker Desktop precisa estar aberto e com o engine rodando antes de executar qualquer comando `docker`.
 
----
-
 ### Instalação do MariaDB
 
 Necessário apenas para rodar o backend fora do Docker.
 
 **Linux**
 ```bash
-sudo apt install mariadb-server
+sudo apt install mariadb-server mariadb-client -y
 ```
 
 **Windows**
@@ -38,8 +33,6 @@ sudo apt install mariadb-server
 1. Baixe o instalador em https://mariadb.org/download/
 2. Durante a instalação, defina uma senha para o usuário `root`
 3. Ao final, adicione o MariaDB ao PATH do sistema — o executável fica em `C:\Program Files\MariaDB x.x\bin`
-
----
 
 ### Instalação do Entity Framework
 
@@ -49,25 +42,21 @@ Necessário apenas para rodar o backend fora do Docker.
 dotnet tool install --global dotnet-ef
 ```
 
----
-
 ## Rodando com Docker
 
 ```bash
-docker compose up
+docker compose up -d --build
 ```
 
 O projeto está pronto quando aparecer nos logs:
 
 ```
-backend-1   |       Content root path: /app
+backend-1 | Content root path: /app
 ```
 
 Acesse o frontend em `http://localhost`.
 
-> Caso já tenha subido o projeto antes e queira recriar os volumes do banco: `docker compose down -v` antes de subir novamente.
-
----
+> Caso já tenha subido o projeto antes, rode `docker compose down -v` antes de subir novamente. O `--build` já está incluído no comando acima e garante que as imagens sejam recriadas do zero, ignorando o cache do Docker.
 
 ## Rodando localmente (sem Docker)
 
@@ -163,8 +152,6 @@ npm run dev
 
 Acesse: `http://localhost:5173`
 
----
-
 ## Verificar o banco no Docker
 
 **Linux:**
@@ -181,11 +168,11 @@ Senha: conforme definido no `.env` (padrão: `senharoot`).
 
 Confirme os outputs conforme a seção [Verificar as tabelas](#3-verificar-as-tabelas) acima.
 
----
-
 ## Rodar testes
 
 ### Backend
+
+> **TODO:** revisar após a issue #13 — o xUnit v3 tem peculiaridades que podem alterar o comando de execução.
 
 ```bash
 cd backend
