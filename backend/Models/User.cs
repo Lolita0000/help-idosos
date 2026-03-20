@@ -7,6 +7,9 @@ public sealed class User
     [Key]
     public int Id { get; set; }
 
+    [Required, MaxLength(256)]
+    public required string Name { get; set; }
+
     // Jay: Número máximo de caracteres permitidos em um e-mail válido. Pelo amor de deus não deixa chegar perto desse número.
     [Required, MaxLength(254)]
     public required string Email { get; set; }
