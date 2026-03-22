@@ -16,7 +16,7 @@ public sealed class UserService(AppDbContext db)
 
         return ToResponse(user);
     }
-    
+
     public async Task<UserResponse> CreateAsync(CreateUserRequest request)
     {
         var user = new User
@@ -31,7 +31,7 @@ public sealed class UserService(AppDbContext db)
 
         return ToResponse(user);
     }
-    
+
     public async Task<UserResponse?> UpdateAsync(int id, UpdateUserRequest request)
     {
         var user = await db.Users.FindAsync(id);
@@ -54,7 +54,7 @@ public sealed class UserService(AppDbContext db)
 
         return ToResponse(user);
     }
-    
+
     public async Task<bool> DeleteAsync(int id)
     {
         var user = await db.Users.FindAsync(id);
