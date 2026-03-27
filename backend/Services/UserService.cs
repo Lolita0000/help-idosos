@@ -4,8 +4,12 @@ using EloDeCuidado.Models;
 
 namespace EloDeCuidado.Services;
 
+/// <summary>
+/// Serviço responsável pelas operações CRUD da entidade User.
+/// </summary>
 public sealed class UserService(AppDbContext db) : IUserService
 {
+    /// <inheritdoc />
     public async Task<UserResponse?> GetByIdAsync(int id)
     {
         var user = await db.Users.FindAsync(id);
@@ -16,6 +20,7 @@ public sealed class UserService(AppDbContext db) : IUserService
         return ToResponse(user);
     }
 
+    /// <inheritdoc />
     public async Task<UserResponse> CreateAsync(CreateUserRequest request)
     {
         var user = new User
@@ -31,6 +36,7 @@ public sealed class UserService(AppDbContext db) : IUserService
         return ToResponse(user);
     }
 
+    /// <inheritdoc />
     public async Task<UserResponse?> UpdateAsync(int id, UpdateUserRequest request)
     {
         var user = await db.Users.FindAsync(id);
@@ -54,6 +60,7 @@ public sealed class UserService(AppDbContext db) : IUserService
         return ToResponse(user);
     }
 
+    /// <inheritdoc />
     public async Task<bool> DeleteAsync(int id)
     {
         var user = await db.Users.FindAsync(id);
