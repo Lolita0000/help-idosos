@@ -6,7 +6,7 @@ namespace EloDeCuidado.Controllers;
 
 [ApiController]
 [Route("api/users")]
-public sealed class UserController(UserService userService) : ControllerBase
+public sealed class UserController(IUserService userService) : ControllerBase
 {
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
@@ -18,7 +18,7 @@ public sealed class UserController(UserService userService) : ControllerBase
 
         return Ok(user);
     }
-
+    
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
@@ -26,7 +26,7 @@ public sealed class UserController(UserService userService) : ControllerBase
 
         return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
     }
-
+    
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest request)
     {
@@ -37,7 +37,7 @@ public sealed class UserController(UserService userService) : ControllerBase
 
         return Ok(user);
     }
-
+    
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {

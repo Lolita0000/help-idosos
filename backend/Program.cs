@@ -21,7 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     );
 });
 
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

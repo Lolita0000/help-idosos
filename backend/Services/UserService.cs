@@ -1,11 +1,10 @@
 ﻿using EloDeCuidado.Data;
 using EloDeCuidado.DTOs;
 using EloDeCuidado.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace EloDeCuidado.Services;
 
-public sealed class UserService(AppDbContext db)
+public sealed class UserService(AppDbContext db) : IUserService
 {
     public async Task<UserResponse?> GetByIdAsync(int id)
     {
