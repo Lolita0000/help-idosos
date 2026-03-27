@@ -33,7 +33,7 @@ public sealed class UserController(IUserService userService) : ControllerBase
     {
         var user = await userService.CreateAsync(request);
 
-        return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
+        return Ok(user);
     }
 
     /// <summary>
