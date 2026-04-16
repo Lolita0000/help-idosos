@@ -2,10 +2,10 @@ import logo from './logo.png';
 
 export default function Logo() {
   return (
-    <img 
-      src={logo} 
+    <img
+      src={logo}
       alt="Elo de Cuidado"
-      style={{ width: 200 }}
+      style={{ width: 493, height: 199 }}
     />
   );
 }

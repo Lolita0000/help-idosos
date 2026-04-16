@@ -1,41 +1,52 @@
-import { Box, Button, Typography, Container } from "@mui/material";
 import Logo from "./components/logo/Logo";
+
 export default function UserView() {
   return (
-    <Box 
-      sx={{ 
-        minHeight: '100vh', 
-        width: '100vw', 
-        background: 'linear-gradient(135deg, #5D9CEC 0%, #4A90E2 100%)',
+    <div
+      style={{
+        minHeight: '100vh',
+        width: '100vw',
+        backgroundColor: '#4A90E2',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }}
     >
-      <Container maxWidth="xs" sx={{ textAlign: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
         
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ marginBottom: '-30px' }}>
           <Logo />
-        </Box>
+        </div>
 
-        <Typography variant="body1" sx={{ color: '#fff', mb: 6 }}>
-          Cuidando de quem você ama, juntos
-        </Typography>
+        <p
+          style={{
+            fontWeight: 400,
+            fontSize: '25px',
+            color: '#fff',
+            marginBottom: '60px'
+          }}
+        >
+          Cuidando de quem você <br />
+          ama, juntos
+        </p>
 
-        <Button 
-          variant="contained" 
-          sx={{ 
-            py: 1.5, 
-            px: 8, 
-            backgroundColor: '#2555D1', 
-            borderRadius: '25px', 
-            textTransform: 'none' 
+        <button
+          style={{
+            fontWeight: 700,
+            width: '357px',
+            height: '95px',
+            backgroundColor: '#1D4ED8',
+            borderRadius: '50px',
+            border: 'none',
+            color: '#fff',
+            fontSize: '30px',
+            cursor: 'pointer'
           }}
         >
           Começar
-        </Button>
+        </button>
 
-      </Container>
-    </Box>
+      </div>
+    </div>
   );
 }
