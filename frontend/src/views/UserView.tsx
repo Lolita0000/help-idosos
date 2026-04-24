@@ -1,25 +1,52 @@
-import { Button, TextField, Box, Typography } from "@mui/material";
+import Logo from "./components/logo/Logo";
 
 export default function UserView() {
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4">Cadastro de Usuário</Typography>
+    <div
+      style={{
+        minHeight: '100vh',
+        width: '100vw',
+        backgroundColor: '#4A90E2',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <div style={{ textAlign: 'center' }}>
+        
+        <div style={{ marginBottom: '-30px' }}>
+          <Logo />
+        </div>
 
-      <TextField
-        label="Nome"
-        fullWidth
-        sx={{ mt: 2 }}
-      />
+        <p
+          style={{
+            fontWeight: 400,
+            fontSize: '25px',
+            color: '#fff',
+            marginBottom: '60px'
+          }}
+        >
+          Cuidando de quem você <br />
+          ama, juntos
+        </p>
 
-      <TextField
-        label="Telefone"
-        fullWidth
-        sx={{ mt: 2 }}
-      />
+        <button
+          style={{
+            fontWeight: 700,
+            width: '357px',
+            height: '95px',
+            backgroundColor: '#1D4ED8',
+            borderRadius: '50px',
+            border: 'none',
+            color: '#fff',
+            fontSize: '30px',
+            cursor: 'pointer'
+          }}
+        >
+          Começar
+        </button>
 
-      <Button variant="contained" sx={{ mt: 2 }}>
-        Cadastrar
-      </Button>
-    </Box>
+      </div>
+    </div>
   );
 }
