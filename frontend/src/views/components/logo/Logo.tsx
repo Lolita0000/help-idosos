@@ -5,7 +5,11 @@ export default function Logo() {
     <img
       src={logo}
       alt="Elo de Cuidado"
-      style={{ width: 493, height: 199 }}
+      style={{
+      width: '100%',
+      maxWidth: '250px',
+      height: 'auto'
+    }}
     />
   );
 }

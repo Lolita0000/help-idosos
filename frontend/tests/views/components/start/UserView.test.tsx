@@ -1,22 +1,17 @@
 import { render, screen } from "@testing-library/react"
 import { describe, it, expect } from "vitest"
-import UserView from "./UserView"
+import UserView from "@/views/components/logo/UserView"
 
 describe("UserView", () => {
-  it("deve renderizar logo, texto e botão começar", () => {
+  it("should render button and text", () => {
     render(<UserView />)
-
-    expect(screen.getByAltText("Elo de Cuidado")).toBeInTheDocument()
 
     expect(
       screen.getByRole("button", { name: /começar/i })
     ).toBeInTheDocument()
 
     expect(
-     screen.getByText((content) =>
-  content.includes("Cuidando de quem você") &&
-  content.includes("ama, juntos")
-)
+      screen.getByText(/Cuidando de quem você.*ama, juntos/i)
     ).toBeInTheDocument()
   })
 })

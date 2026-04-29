@@ -1,5 +1,5 @@
 import React from 'react';
-import UserView from "./views/UserView";
+import UserView from "./views/components/logo/UserView"
 
 function App() {
   return (
