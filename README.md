@@ -52,4 +52,4 @@ Consulte o [guia de setup](SETUP.md) para instruções de instalação e execuç
 ## 🤝 Contribuindo
 
 Contributions, issues e feature requests são bem-vindos!
-Consulte a [página de issues](https://github.com/Lolita0000/help-idosos/issues) e leia o [guia de contribuição](CONTRIBUTING.md) antes de abrir um PR.
+Consulte a [página de issues](https://github.com/Lolita0000/help-idosos/issues) e leia o [guia de contribuição](CONTRIBUTING.md) antes de abrir um PR
