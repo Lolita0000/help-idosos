@@ -6,13 +6,16 @@ import CssBaseline from "@mui/material/CssBaseline";
 
 const theme = createTheme({
   palette: {
-    mode: "dark", // dark mode
+    mode: "light",
     primary: {
-      main: "#7c3aed",
+      main: "#2955D9",
     },
     secondary: {
-      main: "#06b6d4",
+      main: "#5BA4F5",
     },
+  },
+  typography: {
+    fontFamily: "Arial, Helvetica, sans-serif",
   },
 });
 
@@ -22,5 +25,5 @@ createRoot(document.getElementById("root")!).render(
       <CssBaseline />
       <App />
     </ThemeProvider>
-  </StrictMode>
+  </StrictMode>,
 );
