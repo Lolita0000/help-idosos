@@ -1,7 +1,10 @@
-import UserView from "./views/UserView";
+import React from 'react';
+import UserView from "./views/components/logo/UserView"
 
 function App() {
-  return <UserView />;
+  return (
+    <UserView />
+  );
 }
 
 export default App;
