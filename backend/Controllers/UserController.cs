@@ -1,4 +1,4 @@
-﻿using EloDeCuidado.DTOs;
+﻿using EloDeCuidado.DTOs.Users;
 using EloDeCuidado.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +14,7 @@ public sealed class UserController(IUserService userService) : ControllerBase
     /// <summary>
     /// Retorna os dados de um usuário pelo ID.
     /// </summary>
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var user = await userService.GetByIdAsync(id);
@@ -39,7 +39,7 @@ public sealed class UserController(IUserService userService) : ControllerBase
     /// <summary>
     /// Atualiza os dados de um usuário existente. Todos os campos são opcionais.
     /// </summary>
-    [HttpPut("{id}/update")]
+    [HttpPut("{id:int}/update")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest request)
     {
         var user = await userService.UpdateAsync(id, request);
@@ -53,7 +53,7 @@ public sealed class UserController(IUserService userService) : ControllerBase
     /// <summary>
     /// Deleta um usuário pelo ID.
     /// </summary>
-    [HttpDelete("{id}/delete")]
+    [HttpDelete("{id:int}/delete")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await userService.DeleteAsync(id);

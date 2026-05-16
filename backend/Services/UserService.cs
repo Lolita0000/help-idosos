@@ -1,6 +1,7 @@
 ﻿using EloDeCuidado.Data;
-using EloDeCuidado.DTOs;
+using EloDeCuidado.DTOs.Users;
 using EloDeCuidado.Models;
+using EloDeCuidado.Services.Helpers;
 
 namespace EloDeCuidado.Services;
 
@@ -14,10 +15,7 @@ public sealed class UserService(AppDbContext db) : IUserService
     {
         var user = await db.Users.FindAsync(id);
 
-        if (user is null)
-            return null;
-
-        return ToResponse(user);
+        return user is null ? null : ToResponse.User(user);
     }
 
     /// <inheritdoc />
@@ -33,7 +31,7 @@ public sealed class UserService(AppDbContext db) : IUserService
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        return ToResponse(user);
+        return ToResponse.User(user);
     }
 
     /// <inheritdoc />
@@ -57,7 +55,7 @@ public sealed class UserService(AppDbContext db) : IUserService
 
         await db.SaveChangesAsync();
 
-        return ToResponse(user);
+        return ToResponse.User(user);
     }
 
     /// <inheritdoc />
@@ -73,7 +71,4 @@ public sealed class UserService(AppDbContext db) : IUserService
 
         return true;
     }
-
-    private static UserResponse ToResponse(User user) =>
-        new(user.Id, user.Name, user.Email, user.CreatedAt);
 }
