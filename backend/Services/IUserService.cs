@@ -1,4 +1,4 @@
-﻿using EloDeCuidado.DTOs;
+﻿using EloDeCuidado.DTOs.Users;
 
 namespace EloDeCuidado.Services;
 
