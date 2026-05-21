@@ -1,10 +1,7 @@
-import React from 'react';
-import UserView from "./views/components/logo/UserView"
+import RegisterView from "./views/RegisterView";
 
 function App() {
-  return (
-    <UserView />
-  );
+  return <RegisterView />;
 }
 
 export default App;
