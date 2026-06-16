@@ -69,5 +69,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .WithMany(u => u.Memberships)
             .HasForeignKey(wm => wm.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Workspace>()
+            .HasData(
+                new Workspace
+                {
+                    Id = 1,
+                    Name = "Workspace de Teste",
+                    CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                }
+            );
     }
 }

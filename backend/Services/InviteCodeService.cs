@@ -31,6 +31,7 @@ public sealed class InviteCodeService(AppDbContext db) : IInviteCodeService
     {
         var inviteCode = new InviteCode
         {
+            WorkspaceId = request.WorkspaceId,
             Code = UniqueCodeGenerator.Generate(8),
             ExpiresAt = request.ExpiresAt ?? DateTime.UtcNow.AddDays(7),
         };

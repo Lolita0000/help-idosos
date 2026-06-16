@@ -24,10 +24,10 @@ public sealed class InviteCodeController(IInviteCodeService inviteCodeService) :
     }
 
     /// <summary>
-    /// Retorna um código de convite válido
+    /// Retorna um código de convite
     /// </summary>
-    [HttpGet("{id:int}/valid")]
-    public async Task<IActionResult> GetValid(int id)
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> Get(int id)
     {
         var inviteCode = await inviteCodeService.GetByIdAsync(id);
 
