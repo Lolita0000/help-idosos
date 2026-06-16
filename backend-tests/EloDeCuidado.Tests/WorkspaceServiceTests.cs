@@ -31,7 +31,6 @@ public class WorkspaceServiceTests : IAsyncLifetime
         _db = new AppDbContext(_options);
         await _db.Database.EnsureCreatedAsync();
 
-        // Semeia um registro inicial necessário para testar queries, updates e deletes
         var workspace = new Workspace { Name = InitialWorkspaceName };
         _db.Workspaces.Add(workspace);
         await _db.SaveChangesAsync();
@@ -78,7 +77,6 @@ public class WorkspaceServiceTests : IAsyncLifetime
     {
         // Arrange
         var service = new WorkspaceService(_db);
-        // CORREÇÃO: Passando o argumento diretamente no construtor posicional do Record
         var request = new CreateWorkspaceRequest("Workspace do Charlinho");
 
         // Act
@@ -89,7 +87,6 @@ public class WorkspaceServiceTests : IAsyncLifetime
         Assert.True(result.Id > 0);
         Assert.Equal("Workspace do Charlinho", result.Name);
 
-        // Validação com contexto isolado para garantir persistência física no banco
         using var contextCheck = new AppDbContext(_options);
         var dbCheck = await contextCheck.Workspaces.FindAsync(result.Id);
         Assert.NotNull(dbCheck);
@@ -101,7 +98,6 @@ public class WorkspaceServiceTests : IAsyncLifetime
     {
         // Arrange
         var service = new WorkspaceService(_db);
-        // CORREÇÃO: Passando o argumento diretamente no construtor posicional do Record
         var request = new UpdateWorkspaceRequest("Workspace Atualizado Super Novo");
 
         // Act
@@ -111,7 +107,6 @@ public class WorkspaceServiceTests : IAsyncLifetime
         Assert.NotNull(result);
         Assert.Equal("Workspace Atualizado Super Novo", result!.Name);
 
-        // Validação com contexto isolado para mitigar o cache do Identity Map
         using var contextCheck = new AppDbContext(_options);
         var dbCheck = await contextCheck.Workspaces.FindAsync(_existingWorkspaceId);
         Assert.NotNull(dbCheck);
@@ -123,7 +118,6 @@ public class WorkspaceServiceTests : IAsyncLifetime
     {
         // Arrange
         var service = new WorkspaceService(_db);
-        // CORREÇÃO: Passando o argumento diretamente no construtor posicional do Record
         var request = new UpdateWorkspaceRequest("Workspace Fantasma");
 
         // Act
@@ -145,7 +139,6 @@ public class WorkspaceServiceTests : IAsyncLifetime
         // Assert
         Assert.True(deleteResult);
 
-        // Validação com contexto isolado
         using var contextCheck = new AppDbContext(_options);
         var dbCheck = await contextCheck.Workspaces.FindAsync(_existingWorkspaceId);
         Assert.Null(dbCheck);
