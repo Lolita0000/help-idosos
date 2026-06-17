@@ -1,7 +1,11 @@
 import { Box, Typography, Button } from "@mui/material";
 import Logo from "./Logo";
 
-export default function UserView() {
+interface UserViewProps {
+  onStart: () => void;
+}
+
+export default function UserView({ onStart }: UserViewProps) {
   return (
     <Box
       sx={{
@@ -15,7 +19,6 @@ export default function UserView() {
       }}
     >
       <Box textAlign="center">
-
         <Box mb={2}>
           <Logo />
         </Box>
@@ -37,6 +40,7 @@ export default function UserView() {
 
         <Button
           variant="contained"
+          onClick={onStart}
           sx={{
             width: {
               xs: "80%",
@@ -52,7 +56,6 @@ export default function UserView() {
         >
           Começar
         </Button>
-
       </Box>
     </Box>
   );

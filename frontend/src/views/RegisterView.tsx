@@ -2,7 +2,13 @@ import { Box } from "@mui/material";
 import AuthSidePanel from "./components/auth/AuthSidePanel";
 import RegisterForm from "./components/register/RegisterForm";
 
-export default function RegisterView() {
+type RegisterViewProps = {
+  onRegister?: () => void;
+};
+
+export default function RegisterView({
+  onRegister,
+}: RegisterViewProps) {
   return (
     <Box
       sx={{
@@ -18,11 +24,6 @@ export default function RegisterView() {
         },
         position: "relative",
 
-        /*
-          Escala vertical baseada no Figma:
-          altura do protótipo = 744px.
-          Usamos para manter tamanho de fontes, inputs e espaçamentos.
-        */
         "--u": {
           xs: "1px",
           md: "clamp(0.9px, calc(100dvh / 744), 1.22px)",
@@ -39,10 +40,6 @@ export default function RegisterView() {
             md: "absolute",
           },
 
-          /*
-            No Figma, o formulário começa mais ou menos depois da metade.
-            572px / 1045px = 54.7vw
-          */
           left: {
             xs: "auto",
             md: "54.7vw",
@@ -86,7 +83,9 @@ export default function RegisterView() {
           boxSizing: "border-box",
         }}
       >
-        <RegisterForm />
+        <RegisterForm 
+          onRegister={onRegister}
+        />
       </Box>
     </Box>
   );
