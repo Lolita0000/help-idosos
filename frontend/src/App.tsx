@@ -1,20 +1,7 @@
-/*import React from 'react';
-import UserView from "./views/components/logo/UserView"
+import RegisterView from "./views/RegisterView";
 
 function App() {
-  return (
-    <UserView />
-  );
-}
-
-export default App;*/
-
-import RecuperarSenha from "./pages/RecuperarSenha";
-
-function App() {
-  return (
-    <RecuperarSenha />
-  );
+  return <RegisterView />;
 }
 
 export default App;
