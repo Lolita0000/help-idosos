@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.4.2 (Python 3.12.10 on win32)" generated="2026-06-16T22:56:27.358792" rpa="false" schemaversion="5">
+<suite id="s1" name="Test2 Conteudo Card" source="C:\Users\jay\Documents\Projetos\help-idosos\frontend\tests\robot\test2_conteudo_card.robot">
+<test id="s1-t1" name="Card Com Papel Admin Deve Exibir Dados Corretos" line="9">
+<kw name="Open Browser" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:27.976840" level="INFO">Opening browser 'chrome' to base url 'http://localhost:5173'.</msg>
+<arg>${URL}</arg>
+<arg>${BROWSER}</arg>
+<doc>Opens a new browser instance to the optional ``url``.</doc>
+<status status="PASS" start="2026-06-16T22:56:27.976840" elapsed="1.672477"/>
+</kw>
+<kw name="Maximize Browser Window" owner="SeleniumLibrary">
+<doc>Maximizes current browser window.</doc>
+<status status="PASS" start="2026-06-16T22:56:29.649317" elapsed="0.123054"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//h4[contains(text(),'Meus Workspaces')]</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-06-16T22:56:29.773380" elapsed="0.031488"/>
+</kw>
+<kw name="Get WebElement" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:29.819733" level="INFO">${card} = &lt;selenium.webdriver.remote.webelement.WebElement (session="29de40517362c58247b3e01640ad5997", element="f.576A1110D4634D04F4DBBF1306C6E439.d.6E279ED6973C92A116B48D9B7B716E32.e.9")&gt;</msg>
+<var>${card}</var>
+<arg>xpath=(//div[contains(@class,'MuiCard-root')])[1]</arg>
+<doc>Returns the first WebElement matching the given ``locator``.</doc>
+<status status="PASS" start="2026-06-16T22:56:29.804868" elapsed="0.014865"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:29.840156" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="29de40517362c58247b3e01640ad5997", element="f.576A1110D4634D04F4DBBF1306C6E439.d.6E279ED6973C92A116B48D9B7B716E32.e.9")&gt;' contains text 'Cuidados com a Vovó Joana'.</msg>
+<arg>${card}</arg>
+<arg>Cuidados com a Vovó Joana</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:29.819733" elapsed="0.020423"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:29.854217" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="29de40517362c58247b3e01640ad5997", element="f.576A1110D4634D04F4DBBF1306C6E439.d.6E279ED6973C92A116B48D9B7B716E32.e.9")&gt;' contains text 'Carlos Pereira'.</msg>
+<arg>${card}</arg>
+<arg>Carlos Pereira</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:29.840673" elapsed="0.014545"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:29.878256" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="29de40517362c58247b3e01640ad5997", element="f.576A1110D4634D04F4DBBF1306C6E439.d.6E279ED6973C92A116B48D9B7B716E32.e.9")&gt;' contains text 'Joana'.</msg>
+<arg>${card}</arg>
+<arg>Joana</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:29.855218" elapsed="0.023038"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:29.892115" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="29de40517362c58247b3e01640ad5997", element="f.576A1110D4634D04F4DBBF1306C6E439.d.6E279ED6973C92A116B48D9B7B716E32.e.9")&gt;' contains text '3 membros'.</msg>
+<arg>${card}</arg>
+<arg>3 membros</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:29.878256" elapsed="0.013859"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:29.926846" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="29de40517362c58247b3e01640ad5997", element="f.576A1110D4634D04F4DBBF1306C6E439.d.6E279ED6973C92A116B48D9B7B716E32.e.9")&gt;' contains text 'Admin'.</msg>
+<arg>${card}</arg>
+<arg>Admin</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:29.892115" elapsed="0.034731"/>
+</kw>
+<kw name="Close Browser" owner="SeleniumLibrary" type="TEARDOWN">
+<doc>Closes the current browser.</doc>
+<status status="PASS" start="2026-06-16T22:56:29.927848" elapsed="2.305930"/>
+</kw>
+<doc>TC-04: card do workspace Admin deve exibir nome, criador, pessoa, membros e papel</doc>
+<status status="PASS" start="2026-06-16T22:56:27.968312" elapsed="4.265466"/>
+</test>
+<test id="s1-t2" name="Card Com Papel Membro Deve Exibir Dados Corretos" line="22">
+<kw name="Open Browser" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:32.236501" level="INFO">Opening browser 'chrome' to base url 'http://localhost:5173'.</msg>
+<arg>${URL}</arg>
+<arg>${BROWSER}</arg>
+<doc>Opens a new browser instance to the optional ``url``.</doc>
+<status status="PASS" start="2026-06-16T22:56:32.234795" elapsed="1.301302"/>
+</kw>
+<kw name="Maximize Browser Window" owner="SeleniumLibrary">
+<doc>Maximizes current browser window.</doc>
+<status status="PASS" start="2026-06-16T22:56:33.537104" elapsed="0.068144"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//h4[contains(text(),'Meus Workspaces')]</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-06-16T22:56:33.605248" elapsed="0.037611"/>
+</kw>
+<kw name="Get WebElement" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:33.661907" level="INFO">${card} = &lt;selenium.webdriver.remote.webelement.WebElement (session="95dbdba06fe190e3bf64b1ce84ce749c", element="f.DE36B7993D7AC005A2F9399BBB379355.d.E463415566F2CBA4DE5588983D7AB7C9.e.17")&gt;</msg>
+<var>${card}</var>
+<arg>xpath=(//div[contains(@class,'MuiCard-root')])[2]</arg>
+<doc>Returns the first WebElement matching the given ``locator``.</doc>
+<status status="PASS" start="2026-06-16T22:56:33.643856" elapsed="0.018051"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:33.682998" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="95dbdba06fe190e3bf64b1ce84ce749c", element="f.DE36B7993D7AC005A2F9399BBB379355.d.E463415566F2CBA4DE5588983D7AB7C9.e.17")&gt;' contains text 'Pós cirurgia do Tio Alberto'.</msg>
+<arg>${card}</arg>
+<arg>Pós cirurgia do Tio Alberto</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:33.662920" elapsed="0.021447"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:33.697722" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="95dbdba06fe190e3bf64b1ce84ce749c", element="f.DE36B7993D7AC005A2F9399BBB379355.d.E463415566F2CBA4DE5588983D7AB7C9.e.17")&gt;' contains text 'Julia Silva'.</msg>
+<arg>${card}</arg>
+<arg>Julia Silva</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:33.684367" elapsed="0.013355"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:33.712913" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="95dbdba06fe190e3bf64b1ce84ce749c", element="f.DE36B7993D7AC005A2F9399BBB379355.d.E463415566F2CBA4DE5588983D7AB7C9.e.17")&gt;' contains text 'Alberto'.</msg>
+<arg>${card}</arg>
+<arg>Alberto</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:33.698734" elapsed="0.014179"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:33.726136" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="95dbdba06fe190e3bf64b1ce84ce749c", element="f.DE36B7993D7AC005A2F9399BBB379355.d.E463415566F2CBA4DE5588983D7AB7C9.e.17")&gt;' contains text '5 membros'.</msg>
+<arg>${card}</arg>
+<arg>5 membros</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:33.712913" elapsed="0.013223"/>
+</kw>
+<kw name="Element Should Contain" owner="SeleniumLibrary">
+<msg time="2026-06-16T22:56:33.739121" level="INFO">Element '&lt;selenium.webdriver.remote.webelement.WebElement (session="95dbdba06fe190e3bf64b1ce84ce749c", element="f.DE36B7993D7AC005A2F9399BBB379355.d.E463415566F2CBA4DE5588983D7AB7C9.e.17")&gt;' contains text 'Membro'.</msg>
+<arg>${card}</arg>
+<arg>Membro</arg>
+<doc>Verifies that element ``locator`` contains text ``expected``.</doc>
+<status status="PASS" start="2026-06-16T22:56:33.727136" elapsed="0.011985"/>
+</kw>
+<kw name="Close Browser" owner="SeleniumLibrary" type="TEARDOWN">
+<doc>Closes the current browser.</doc>
+<status status="PASS" start="2026-06-16T22:56:33.740632" elapsed="2.362444"/>
+</kw>
+<doc>TC-05: card do workspace Membro deve exibir nome, criador, pessoa, membros e papel</doc>
+<status status="PASS" start="2026-06-16T22:56:32.234795" elapsed="3.869277"/>
+</test>
+<status status="PASS" start="2026-06-16T22:56:27.360744" elapsed="8.744337"/>
+</suite>
+<statistics>
+<total>
+<stat pass="2" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat name="Test2 Conteudo Card" id="s1" pass="2" fail="0" skip="0">Test2 Conteudo Card</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
