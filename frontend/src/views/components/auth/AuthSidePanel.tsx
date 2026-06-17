@@ -46,7 +46,6 @@ export default function AuthSidePanel() {
         },
       }}
     >
-      {/* Azul principal do lado esquerdo */}
       <Box
         sx={{
           display: {
@@ -57,13 +56,6 @@ export default function AuthSidePanel() {
           position: "absolute",
           zIndex: 1,
 
-          /*
-            Aqui está o ponto principal da correção.
-
-            Antes o círculo estava escalando errado em telas largas.
-            Agora ele acompanha a largura e a altura da tela,
-            mantendo o mesmo posicionamento visual do Figma.
-          */
           width: "77.9vw",
           height: "200dvh",
 
@@ -77,7 +69,6 @@ export default function AuthSidePanel() {
         }}
       />
 
-      {/* Fundo azul no mobile */}
       <Box
         sx={{
           display: {
@@ -94,7 +85,6 @@ export default function AuthSidePanel() {
         }}
       />
 
-      {/* Bola grande inferior esquerda */}
       <Box
         sx={{
           position: "absolute",
@@ -129,7 +119,6 @@ export default function AuthSidePanel() {
         }}
       />
 
-      {/* Bola menor próxima da curva */}
       <Box
         sx={{
           position: "absolute",
@@ -167,16 +156,10 @@ export default function AuthSidePanel() {
         }}
       />
 
-      {/* Conteúdo do lado esquerdo */}
       <Box
         sx={{
           position: "absolute",
           zIndex: 4,
-
-          /*
-            No Figma, o conteúdo fica centralizado dentro do bloco azul,
-            não colado na esquerda.
-          */
           left: {
             xs: 0,
             md: "24vw",

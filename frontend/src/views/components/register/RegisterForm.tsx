@@ -8,6 +8,10 @@ type FormInputProps = {
   hasPasswordIcon?: boolean;
 };
 
+type RegisterFormProps = {
+  onRegister?: () => void;
+};
+
 function FormInput({
   label,
   placeholder,
@@ -15,25 +19,18 @@ function FormInput({
   hasPasswordIcon = false,
 }: FormInputProps) {
   return (
-    <Box
-      sx={{
-        width: "100%",
-      }}
-    >
+    <Box sx={{ width: "100%" }}>
       <Typography
         component="label"
         sx={{
           display: "block",
           color: "#000000",
           fontWeight: 400,
-
           fontSize: {
             xs: "14px",
             md: "calc(18 * var(--u))",
           },
-
           lineHeight: 1.15,
-
           mb: {
             xs: "6px",
             md: "calc(7 * var(--u))",
@@ -43,47 +40,33 @@ function FormInput({
         {label}
       </Typography>
 
-      <Box
-        sx={{
-          position: "relative",
-          width: "100%",
-        }}
-      >
+      <Box sx={{ position: "relative", width: "100%" }}>
         <Box
           component="input"
           type={type}
           placeholder={placeholder}
           sx={{
             width: "100%",
-
             height: {
               xs: "34px",
               md: "calc(36 * var(--u))",
             },
-
             minHeight: "34px",
             maxHeight: "42px",
-
             boxSizing: "border-box",
-
             border: "1px solid #9AA3AE",
             borderRadius: "6px",
-
             bgcolor: "#E6E6E6",
             color: "#4B5563",
-
             fontSize: {
               xs: "13px",
               md: "calc(14 * var(--u))",
             },
-
             px: {
               xs: "12px",
               md: "calc(13 * var(--u))",
             },
-
             pr: hasPasswordIcon ? "42px" : undefined,
-
             outline: "none",
 
             "&::placeholder": {
@@ -126,7 +109,9 @@ function FormInput({
   );
 }
 
-export default function RegisterForm() {
+export default function RegisterForm({
+  onRegister,
+}: RegisterFormProps) {
   return (
     <Box
       component="form"
@@ -153,7 +138,7 @@ export default function RegisterForm() {
         },
 
         boxShadow: {
-          xs: "0 1px 10px rgba(0, 0, 0, 0.04)",
+          xs: "0 1px 10px rgba(0,0,0,0.04)",
           md: "none",
         },
 
@@ -176,13 +161,10 @@ export default function RegisterForm() {
           color: "#000000",
           textAlign: "center",
           fontWeight: 700,
-          lineHeight: 1.1,
-
           fontSize: {
             xs: "24px",
             md: "calc(28 * var(--u))",
           },
-
           mb: {
             xs: "8px",
             md: "calc(14 * var(--u))",
@@ -196,13 +178,10 @@ export default function RegisterForm() {
         sx={{
           color: "#6F6F6F",
           textAlign: "center",
-          lineHeight: 1.15,
-
           fontSize: {
             xs: "13px",
             md: "calc(14 * var(--u))",
           },
-
           mb: {
             xs: "20px",
             md: "calc(22 * var(--u))",
@@ -218,7 +197,6 @@ export default function RegisterForm() {
         sx={{
           display: "flex",
           flexDirection: "column",
-
           gap: {
             xs: "13px",
             md: "calc(16 * var(--u))",
@@ -248,171 +226,45 @@ export default function RegisterForm() {
 
       <Box
         sx={{
-          display: "grid",
-          gridTemplateColumns: "22px 1fr auto 1fr",
+          display: "flex",
           alignItems: "center",
-
-          columnGap: {
-            xs: "6px",
-            md: "calc(9 * var(--u))",
-          },
-
-          mt: {
-            xs: "14px",
-            md: "calc(17 * var(--u))",
-          },
-
-          mb: {
-            xs: "16px",
-            md: "calc(18 * var(--u))",
-          },
+          gap: 1,
+          mt: 2,
+          mb: 2,
         }}
       >
         <Box
           component="input"
           type="checkbox"
-          aria-label="Aceitar termos"
           sx={{
-            appearance: "none",
-
-            width: {
-              xs: "18px",
-              md: "calc(18 * var(--u))",
-            },
-
-            height: {
-              xs: "18px",
-              md: "calc(18 * var(--u))",
-            },
-
-            border: "1px solid #2563EB",
-            borderRadius: "4px",
-            bgcolor: "#FFFFFF",
-            cursor: "pointer",
-
-            "&:checked": {
-              bgcolor: "#2563EB",
-              backgroundImage:
-                "linear-gradient(45deg, transparent 65%, white 65%), linear-gradient(-45deg, transparent 75%, white 75%), linear-gradient(45deg, white 40%, transparent 40%)",
-              backgroundPosition:
-                "left 6px top 9px, left 8px top 9px, left 3px top 5px",
-              backgroundSize: "5px 5px, 5px 5px, 8px 8px",
-              backgroundRepeat: "no-repeat",
-            },
+            width: "18px",
+            height: "18px",
           }}
         />
 
-        <Typography
-          sx={{
-            color: "#000000",
-            lineHeight: 1.05,
-
-            fontSize: {
-              xs: "11px",
-              md: "calc(14 * var(--u))",
-            },
-          }}
-        >
-          Li e concordo
-          <br />
-          com os
-        </Typography>
-
-        <Link
-          href="#"
-          underline="none"
-          sx={{
-            color: "#2B7DE9",
-            lineHeight: 1.05,
-
-            fontSize: {
-              xs: "11px",
-              md: "calc(14 * var(--u))",
-            },
-          }}
-        >
-          Termos de
-          <br />
-          Serviço.
-        </Link>
-
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: {
-              xs: "6px",
-              md: "calc(9 * var(--u))",
-            },
-          }}
-        >
-          <Typography
-            sx={{
-              color: "#000000",
-
-              fontSize: {
-                xs: "11px",
-                md: "calc(14 * var(--u))",
-              },
-            }}
-          >
-            e
-          </Typography>
-
-          <Link
-            href="#"
-            underline="none"
-            sx={{
-              color: "#2B7DE9",
-              lineHeight: 1.05,
-
-              fontSize: {
-                xs: "11px",
-                md: "calc(14 * var(--u))",
-              },
-            }}
-          >
-            Política de
-            <br />
-            Privacidade.
+        <Typography fontSize="12px">
+          Li e concordo com os{" "}
+          <Link href="#" underline="none" color="#2B7DE9">
+            Termos de Serviço
+          </Link>{" "}
+          e{" "}
+          <Link href="#" underline="none" color="#2B7DE9">
+            Política de Privacidade.
           </Link>
-        </Box>
+        </Typography>
       </Box>
 
       <Button
-        type="submit"
+        type="button"
         fullWidth
         variant="contained"
         sx={{
-          height: {
-            xs: "37px",
-            md: "calc(37 * var(--u))",
-          },
-
-          minHeight: "37px",
-          maxHeight: "45px",
-
+          height: "37px",
           bgcolor: "#2856D9",
-          color: "#FFFFFF",
-
           borderRadius: "6px",
-
           fontWeight: 700,
-
-          fontSize: {
-            xs: "15px",
-            md: "calc(18 * var(--u))",
-          },
-
-          lineHeight: 1,
-
           textTransform: "none",
-
-          boxShadow: "3px 4px 4px rgba(0, 0, 0, 0.35)",
-
-          "&:hover": {
-            bgcolor: "#1F4ED0",
-          },
+          boxShadow: "3px 4px 4px rgba(0,0,0,0.35)",
         }}
       >
         Registrar
@@ -422,25 +274,18 @@ export default function RegisterForm() {
         sx={{
           textAlign: "center",
           color: "#6B7280",
-
-          fontSize: {
-            xs: "12px",
-            md: "calc(14 * var(--u))",
-          },
-
-          mt: {
-            xs: "17px",
-            md: "calc(24 * var(--u))",
-          },
+          mt: 2,
+          fontSize: "12px",
         }}
       >
         Já possui uma conta?{" "}
         <Link
           href="#"
           underline="none"
-          sx={{
-            color: "#2B7DE9",
-            fontWeight: 700,
+          color="#2B7DE9"
+          onClick={(event) => {
+            event.preventDefault();
+            onRegister?.();
           }}
         >
           Entrar.
