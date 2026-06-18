@@ -12,6 +12,8 @@ public sealed class Workspace
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public DateTime? UpdatedAt { get; set; }
+
     public ICollection<WorkspaceMember> Members { get; set; } = [];
     public ICollection<InviteCode> InviteCodes { get; set; } = [];
     public ICollection<DiaryEntry> DiaryEntries { get; set; } = [];

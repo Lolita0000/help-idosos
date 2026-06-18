@@ -1,19 +1,7 @@
-//import React from 'react';
-//import WorkspaceView  from "./views/components/logo/UserView"
-//
-//function App() {
-//  return (
-//    <WorkspaceView  />
-//  );
-//}
-//
-//export default App;
-
-
-import WorkspaceView from "./views/components/workspace/WorkspaceView";
+import RegisterView from "./views/RegisterView";
 
 function App() {
-  return <WorkspaceView />;
+  return <RegisterView />;
 }
 
 export default App;

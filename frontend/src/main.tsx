@@ -7,12 +7,12 @@ import './index.css';
 
 const theme = createTheme({
   palette: {
-    mode: "dark", // dark mode
+    mode: "light",         
     primary: {
-      main: "#7c3aed",
+      main: "#2856D9",     
     },
     secondary: {
-      main: "#06b6d4",
+      main: "#2563EB",
     },
   },
 });
