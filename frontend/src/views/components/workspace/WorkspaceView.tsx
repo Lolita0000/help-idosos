@@ -1,4 +1,4 @@
-import { Box, Divider } from "@mui/material";
+import { Box, Divider, Typography } from "@mui/material";
 import WorkspaceCard from "./WorkspaceCard";
 import Header from "./Header";
 import FilterTabs from "./FilterTabs";
@@ -57,6 +57,10 @@ export default function WorkspaceView() {
         <Header />
         <Divider sx={{ mb: 3 }} />
         <FilterTabs filtro={filtro} setFiltro={setFiltro} />
+
+        {workspacesFiltrados.length === 0 && (
+          <Typography> Nenhum workspace encontrado.</Typography>
+        )}
 
         {/* CARDS */}
 

@@ -34,8 +34,6 @@ export default function FilterTabs({
           ))}
         </Box>
 
-        {workspacesFiltrados.length === 0 && (
-          <Typography> Nenhum workspace encontrado.</Typography>
-        )}
+   
   );
 }
