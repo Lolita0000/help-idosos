@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.4.2 (Python 3.13.2 on win32)" generated="2026-06-17T22:44:37.496354" rpa="false" schemaversion="5">
+<suite id="s1" name="Test Termos" source="C:\Users\Lele\Desktop\elo-de-cuidado\help-idosos\frontend\tests\robot\test_termos.robot">
+<test id="s1-t1" name="CT-01 - Cadastro sem aceitar os termos" line="9">
+<kw name="Open Browser" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:37.741224" level="INFO">Opening browser 'chrome' to base url 'http://localhost:5176/'.</msg>
+<arg>${URL}</arg>
+<arg>${BROWSER}</arg>
+<doc>Opens a new browser instance to the optional ``url``.</doc>
+<status status="PASS" start="2026-06-17T22:44:37.740997" elapsed="1.006257"/>
+</kw>
+<kw name="Maximize Browser Window" owner="SeleniumLibrary">
+<doc>Maximizes current browser window.</doc>
+<status status="PASS" start="2026-06-17T22:44:38.747792" elapsed="0.033245"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//input[@placeholder='Digite seu nome..']</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-06-17T22:44:38.781419" elapsed="0.013708"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:38.795600" level="INFO">Typing text 'Maria Teste' into text field 'xpath=//input[@placeholder='Digite seu nome..']'.</msg>
+<arg>xpath=//input[@placeholder='Digite seu nome..']</arg>
+<arg>Maria Teste</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:38.795405" elapsed="0.085451"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:38.881580" level="INFO">Typing text '123.456.789-00' into text field 'xpath=//input[@placeholder='Digite seu CPF..']'.</msg>
+<arg>xpath=//input[@placeholder='Digite seu CPF..']</arg>
+<arg>123.456.789-00</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:38.881311" elapsed="0.060678"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:38.942603" level="INFO">Typing text 'maria@email.com' into text field 'xpath=//input[@placeholder='Digite seu e-mail..']'.</msg>
+<arg>xpath=//input[@placeholder='Digite seu e-mail..']</arg>
+<arg>maria@email.com</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:38.942358" elapsed="0.088466"/>
+</kw>
+<kw name="Input Password" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:39.031349" level="INFO">Typing password into text field 'xpath=//input[@placeholder='Crie uma senha forte']'.</msg>
+<msg time="2026-06-17T22:44:39.053312" level="INFO">Temporally setting log level to: NONE</msg>
+<arg>xpath=//input[@placeholder='Crie uma senha forte']</arg>
+<arg>Senha@123</arg>
+<doc>Types the given password into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:39.031119" elapsed="0.058785"/>
+</kw>
+<kw name="Input Password" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:39.090444" level="INFO">Typing password into text field 'xpath=//input[@placeholder='Digite a senha novamente']'.</msg>
+<msg time="2026-06-17T22:44:39.112292" level="INFO">Temporally setting log level to: NONE</msg>
+<arg>xpath=//input[@placeholder='Digite a senha novamente']</arg>
+<arg>Senha@123</arg>
+<doc>Types the given password into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:39.090244" elapsed="0.066724"/>
+</kw>
+<kw name="Click Button" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:39.157612" level="INFO">Clicking button 'xpath=//button[contains(text(),'Registrar')]'.</msg>
+<arg>xpath=//button[contains(text(),'Registrar')]</arg>
+<doc>Clicks the button identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:39.157353" elapsed="0.070114"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-06-17T22:44:42.228455" level="INFO">Slept 3 seconds.</msg>
+<arg>3s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-06-17T22:44:39.227898" elapsed="3.000887"/>
+</kw>
+<kw name="Location Should Be" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:42.238691" level="INFO">Current location is 'http://localhost:5176/'.</msg>
+<arg>${URL}</arg>
+<doc>Verifies that the current URL is exactly ``url``.</doc>
+<status status="PASS" start="2026-06-17T22:44:42.229386" elapsed="0.009516"/>
+</kw>
+<kw name="Close Browser" owner="SeleniumLibrary">
+<doc>Closes the current browser.</doc>
+<status status="PASS" start="2026-06-17T22:44:42.239557" elapsed="2.204458"/>
+</kw>
+<status status="PASS" start="2026-06-17T22:44:37.740150" elapsed="6.704475"/>
+</test>
+<test id="s1-t2" name="CT-02 - Cadastro aceitando os termos" line="23">
+<kw name="Open Browser" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:44.446384" level="INFO">Opening browser 'chrome' to base url 'http://localhost:5176/'.</msg>
+<arg>${URL}</arg>
+<arg>${BROWSER}</arg>
+<doc>Opens a new browser instance to the optional ``url``.</doc>
+<status status="PASS" start="2026-06-17T22:44:44.446078" elapsed="1.038244"/>
+</kw>
+<kw name="Maximize Browser Window" owner="SeleniumLibrary">
+<doc>Maximizes current browser window.</doc>
+<status status="PASS" start="2026-06-17T22:44:45.484851" elapsed="0.032248"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//input[@placeholder='Digite seu nome..']</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-06-17T22:44:45.517859" elapsed="0.017258"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:45.536645" level="INFO">Typing text 'Maria Teste' into text field 'xpath=//input[@placeholder='Digite seu nome..']'.</msg>
+<arg>xpath=//input[@placeholder='Digite seu nome..']</arg>
+<arg>Maria Teste</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:45.535917" elapsed="0.094735"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:45.631428" level="INFO">Typing text '123.456.789-00' into text field 'xpath=//input[@placeholder='Digite seu CPF..']'.</msg>
+<arg>xpath=//input[@placeholder='Digite seu CPF..']</arg>
+<arg>123.456.789-00</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:45.631103" elapsed="0.062572"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:45.694635" level="INFO">Typing text 'maria@email.com' into text field 'xpath=//input[@placeholder='Digite seu e-mail..']'.</msg>
+<arg>xpath=//input[@placeholder='Digite seu e-mail..']</arg>
+<arg>maria@email.com</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:45.694321" elapsed="0.058192"/>
+</kw>
+<kw name="Input Password" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:45.753532" level="INFO">Typing password into text field 'xpath=//input[@placeholder='Crie uma senha forte']'.</msg>
+<msg time="2026-06-17T22:44:45.777177" level="INFO">Temporally setting log level to: NONE</msg>
+<arg>xpath=//input[@placeholder='Crie uma senha forte']</arg>
+<arg>Senha@123</arg>
+<doc>Types the given password into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:45.753180" elapsed="0.053919"/>
+</kw>
+<kw name="Input Password" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:45.807971" level="INFO">Typing password into text field 'xpath=//input[@placeholder='Digite a senha novamente']'.</msg>
+<msg time="2026-06-17T22:44:45.831905" level="INFO">Temporally setting log level to: NONE</msg>
+<arg>xpath=//input[@placeholder='Digite a senha novamente']</arg>
+<arg>Senha@123</arg>
+<doc>Types the given password into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:45.807615" elapsed="0.052248"/>
+</kw>
+<kw name="Select Checkbox" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:45.860827" level="INFO">Selecting checkbox 'xpath=//input[@type='checkbox']'.</msg>
+<arg>xpath=//input[@type='checkbox']</arg>
+<doc>Selects the checkbox identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:45.860510" elapsed="0.055107"/>
+</kw>
+<kw name="Click Button" owner="SeleniumLibrary">
+<msg time="2026-06-17T22:44:45.916413" level="INFO">Clicking button 'xpath=//button[contains(text(),'Registrar')]'.</msg>
+<arg>xpath=//button[contains(text(),'Registrar')]</arg>
+<doc>Clicks the button identified by ``locator``.</doc>
+<status status="PASS" start="2026-06-17T22:44:45.916118" elapsed="0.089672"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-06-17T22:44:49.009607" level="INFO">Slept 3 seconds.</msg>
+<arg>3s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-06-17T22:44:46.006548" elapsed="3.003233"/>
+</kw>
+<kw name="Close Browser" owner="SeleniumLibrary">
+<doc>Closes the current browser.</doc>
+<status status="PASS" start="2026-06-17T22:44:49.011331" elapsed="2.216939"/>
+</kw>
+<status status="PASS" start="2026-06-17T22:44:44.445327" elapsed="6.783220"/>
+</test>
+<status status="PASS" start="2026-06-17T22:44:37.498319" elapsed="13.730877"/>
+</suite>
+<statistics>
+<total>
+<stat pass="2" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat name="Test Termos" id="s1" pass="2" fail="0" skip="0">Test Termos</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
