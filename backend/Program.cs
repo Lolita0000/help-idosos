@@ -22,6 +22,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
+builder.Services.AddScoped<IInviteCodeService, InviteCodeService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
