@@ -13,7 +13,10 @@ public class WorkspaceServiceTests : IAsyncLifetime
     private DbContextOptions<AppDbContext> _options = null!;
     private AppDbContext _db = null!;
     private int _existingWorkspaceId;
+    private int _creatorUserId;
     private const string InitialWorkspaceName = "Workspace Inicial de Teste";
+    private const string InitialSubjectName = "Joana Pereira";
+    private const string CreatorName = "Carlos Pereira";
 
     public async ValueTask InitializeAsync()
     {
@@ -31,10 +34,25 @@ public class WorkspaceServiceTests : IAsyncLifetime
         _db = new AppDbContext(_options);
         await _db.Database.EnsureCreatedAsync();
 
-        var workspace = new Workspace { Name = InitialWorkspaceName };
+        var creator = new User
+        {
+            Name = CreatorName,
+            Email = "carlosp@gmail.com",
+            PasswordHash = "hash-irrelevante-para-este-teste",
+        };
+        _db.Users.Add(creator);
+        await _db.SaveChangesAsync();
+
+        _creatorUserId = creator.Id;
+
+        var workspace = new Workspace
+        {
+            Name = InitialWorkspaceName,
+            SubjectName = InitialSubjectName,
+        };
         _db.Workspaces.Add(workspace);
         await _db.SaveChangesAsync();
-        
+
         _existingWorkspaceId = workspace.Id;
     }
 
@@ -77,20 +95,68 @@ public class WorkspaceServiceTests : IAsyncLifetime
     {
         // Arrange
         var service = new WorkspaceService(_db);
-        var request = new CreateWorkspaceRequest("Workspace do Charlinho");
+        var request = new CreateWorkspaceRequest(
+            "Workspace do Charlinho", "Charles Silva", "Acompanhamento pos-cirurgico");
 
         // Act
-        var result = await service.CreateAsync(request);
+        var result = await service.CreateAsync(request, _creatorUserId);
 
         // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal("Workspace do Charlinho", result.Name);
+        Assert.Equal("Charles Silva", result.SubjectName);
+        Assert.Equal("Acompanhamento pos-cirurgico", result.Description);
 
         using var contextCheck = new AppDbContext(_options);
         var dbCheck = await contextCheck.Workspaces.FindAsync(result.Id);
         Assert.NotNull(dbCheck);
         Assert.Equal("Workspace do Charlinho", dbCheck!.Name);
+        Assert.Equal("Charles Silva", dbCheck.SubjectName);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DeveVincularCriadorComoAdministrador()
+    {
+        // RN-001: ao criar um workspace, o criador assume o papel de administrador.
+
+        // Arrange
+        var service = new WorkspaceService(_db);
+        var request = new CreateWorkspaceRequest("Cuidados da Vovo", "Joana Pereira", null);
+
+        // Act
+        var result = await service.CreateAsync(request, _creatorUserId);
+
+        // Assert
+        using var contextCheck = new AppDbContext(_options);
+        var members = await contextCheck.WorkspaceMembers
+            .Where(m => m.WorkspaceId == result.Id)
+            .ToListAsync();
+
+        var admin = Assert.Single(members);
+        Assert.Equal(_creatorUserId, admin.UserId);
+        Assert.Equal(MemberRole.Admin, admin.Role);
+
+        // O sujeito acompanhado nao recebe acesso automatico: ele e apenas
+        // identificado por nome ate ingressar por codigo de convite.
+        Assert.False(admin.IsSubject);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DeveExporAutorEContagemDeMembros()
+    {
+        // Dados exibidos no card da listagem de workspaces.
+
+        // Arrange
+        var service = new WorkspaceService(_db);
+        var request = new CreateWorkspaceRequest("Cuidados da Vovo", "Joana Pereira", null);
+
+        // Act
+        var result = await service.CreateAsync(request, _creatorUserId);
+
+        // Assert
+        Assert.Equal(CreatorName, result.CreatedBy);
+        Assert.Equal(1, result.MemberCount);
     }
 
     [Fact]
@@ -98,7 +164,7 @@ public class WorkspaceServiceTests : IAsyncLifetime
     {
         // Arrange
         var service = new WorkspaceService(_db);
-        var request = new UpdateWorkspaceRequest("Workspace Atualizado Super Novo");
+        var request = new UpdateWorkspaceRequest("Workspace Atualizado Super Novo", null, null);
 
         // Act
         var result = await service.UpdateAsync(_existingWorkspaceId, request);
@@ -118,7 +184,7 @@ public class WorkspaceServiceTests : IAsyncLifetime
     {
         // Arrange
         var service = new WorkspaceService(_db);
-        var request = new UpdateWorkspaceRequest("Workspace Fantasma");
+        var request = new UpdateWorkspaceRequest("Workspace Fantasma", null, null);
 
         // Act
         var result = await service.UpdateAsync(999, request);
