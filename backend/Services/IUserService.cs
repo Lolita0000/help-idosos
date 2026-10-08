@@ -1,4 +1,5 @@
 ﻿using EloDeCuidado.DTOs.Users;
+using EloDeCuidado.Models;
 
 namespace EloDeCuidado.Services;
 
@@ -26,4 +27,15 @@ public interface IUserService
     /// Deleta um usuário pelo ID.
     /// </summary>
     Task<bool> DeleteAsync(int id);
+
+    /// <summary>
+    /// Busca a entidade de usuário pelo e-mail. Usado na autenticação, por
+    /// retornar o hash da senha, que não é exposto no <see cref="UserResponse"/>.
+    /// </summary>
+    Task<User?> GetByEmailAsync(string email);
+
+    /// <summary>
+    /// Indica se já existe um usuário cadastrado com o e-mail informado.
+    /// </summary>
+    Task<bool> EmailExistsAsync(string email);
 }
