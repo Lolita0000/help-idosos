@@ -2,6 +2,7 @@
 using EloDeCuidado.DTOs.Users;
 using EloDeCuidado.Models;
 using EloDeCuidado.Services.Helpers;
+using Microsoft.EntityFrameworkCore;
 
 namespace EloDeCuidado.Services;
 
@@ -25,7 +26,7 @@ public sealed class UserService(AppDbContext db) : IUserService
         {
             Name = request.Name,
             Email = request.Email,
-            PasswordHash = request.Password,
+            PasswordHash = PasswordHasher.Hash(request.Password),
         };
 
         db.Users.Add(user);
@@ -33,6 +34,14 @@ public sealed class UserService(AppDbContext db) : IUserService
 
         return ToResponse.User(user);
     }
+
+    /// <inheritdoc />
+    public async Task<User?> GetByEmailAsync(string email) =>
+        await db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+    /// <inheritdoc />
+    public async Task<bool> EmailExistsAsync(string email) =>
+        await db.Users.AnyAsync(u => u.Email == email);
 
     /// <inheritdoc />
     public async Task<UserResponse?> UpdateAsync(int id, UpdateUserRequest request)
@@ -49,7 +58,7 @@ public sealed class UserService(AppDbContext db) : IUserService
             user.Email = request.Email;
 
         if (request.Password is not null)
-            user.PasswordHash = request.Password;
+            user.PasswordHash = PasswordHasher.Hash(request.Password);
 
         user.UpdatedAt = DateTime.UtcNow;
 
