@@ -2,6 +2,7 @@
 using EloDeCuidado.DTOs.InviteCode;
 using EloDeCuidado.Models;
 using EloDeCuidado.Services.Helpers;
+using Microsoft.EntityFrameworkCore;
 
 namespace EloDeCuidado.Services;
 
@@ -23,16 +24,39 @@ public sealed class InviteCodeService(AppDbContext db) : IInviteCodeService
     }
 
     /// <summary>
-    /// Cria um novo código de convite com base nos dados fornecidos na requisição.
+    /// Prazo máximo de validade de um código de convite, conforme a RN-005.
+    /// </summary>
+    private static readonly TimeSpan MaximumLifetime = TimeSpan.FromHours(24);
+
+    /// <summary>
+    /// Cria um novo código de convite para um workspace.
     /// </summary>
     /// <param name="request">Os dados necessários para criar um novo código de convite.</param>
-    /// <returns>O código de convite criado.</returns>
-    public async Task<InviteCodeResponse> CreateAsync(CreateInviteCodeRequest request)
+    /// <returns>
+    /// O código de convite criado, ou <c>null</c> se o workspace informado não existir.
+    /// </returns>
+    public async Task<InviteCodeResponse?> CreateAsync(CreateInviteCodeRequest request)
     {
+        // O WorkspaceId é obrigatório no model. Sem esta verificação, um id
+        // inexistente só falharia no banco, por violação de chave estrangeira.
+        var workspaceExists = await db.Workspaces.AnyAsync(w => w.Id == request.WorkspaceId);
+
+        if (!workspaceExists)
+            return null;
+
+        var limit = DateTime.UtcNow.Add(MaximumLifetime);
+
+        // A expiração informada é respeitada, desde que não ultrapasse o teto
+        // de 24 horas definido pela RN-005.
+        var expiresAt = request.ExpiresAt is { } requested && requested < limit
+            ? requested
+            : limit;
+
         var inviteCode = new InviteCode
         {
+            WorkspaceId = request.WorkspaceId,
             Code = UniqueCodeGenerator.Generate(8),
-            ExpiresAt = request.ExpiresAt ?? DateTime.UtcNow.AddDays(7),
+            ExpiresAt = expiresAt,
         };
 
         db.InviteCodes.Add(inviteCode);

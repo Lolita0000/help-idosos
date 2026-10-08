@@ -23,5 +23,6 @@ public static class ToResponse
     /// <param name="inviteCode">O objeto InviteCode a ser convertido</param>
     /// <returns>Um objeto InviteCodeResponse contendo os dados do código de convite</returns>
     public static InviteCodeResponse InviteCode(InviteCode inviteCode) =>
-        new(inviteCode.Id, inviteCode.Code, inviteCode.ExpiresAt, inviteCode.CreatedAt);
+        new(inviteCode.Id, inviteCode.WorkspaceId, inviteCode.Code, inviteCode.ExpiresAt,
+            inviteCode.CreatedAt);
 }

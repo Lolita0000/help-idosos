@@ -13,12 +13,17 @@ namespace EloDeCuidado.Controllers;
 public sealed class InviteCodeController(IInviteCodeService inviteCodeService) : ControllerBase
 {
     /// <summary>
-    /// Gera um novo código de convite.
+    /// Gera um novo código de convite para um workspace. O código expira em 24 horas.
     /// </summary>
+    /// <response code="200">Código gerado.</response>
+    /// <response code="404">O workspace informado não existe.</response>
     [HttpPost]
     public async Task<IActionResult> Generate([FromBody] CreateInviteCodeRequest request)
     {
         var inviteCode = await inviteCodeService.CreateAsync(request);
+
+        if (inviteCode is null)
+            return NotFound(new { error = "Workspace não encontrado." });
 
         return Ok(inviteCode);
     }
