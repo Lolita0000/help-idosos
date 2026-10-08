@@ -13,9 +13,11 @@ public interface IWorkspaceService
     Task<WorkspaceResponse?> GetByIdAsync(int id);
 
     /// <summary>
-    /// Cria um novo workspace.
+    /// Cria um novo workspace, vinculando o criador como administrador (RN-001).
     /// </summary>
-    Task<WorkspaceResponse> CreateAsync(CreateWorkspaceRequest request);
+    /// <param name="request">Nome, sujeito acompanhado e descrição opcional.</param>
+    /// <param name="creatorUserId">Usuário autenticado que será o administrador.</param>
+    Task<WorkspaceResponse> CreateAsync(CreateWorkspaceRequest request, int creatorUserId);
 
     /// <summary>
     /// Atualiza os dados de um workspace existente. Todos os campos são opcionais.
@@ -26,4 +28,9 @@ public interface IWorkspaceService
     /// Deleta um workspace pelo ID.
     /// </summary>
     Task<bool> DeleteAsync(int id);
+
+    /// <summary>
+    /// Indica se o usuário participa do workspace informado.
+    /// </summary>
+    Task<bool> IsMemberAsync(int workspaceId, int userId);
 }
