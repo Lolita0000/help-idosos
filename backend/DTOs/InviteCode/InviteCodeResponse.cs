@@ -5,6 +5,7 @@
 /// </summary>
 public sealed record InviteCodeResponse(
     int Id,
+    int WorkspaceId,
     string Code,
     DateTime ExpiresAt,
     DateTime CreatedAt

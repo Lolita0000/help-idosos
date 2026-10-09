@@ -13,9 +13,12 @@ public interface IInviteCodeService
     Task<InviteCodeResponse?> GetByIdAsync(int id);
 
     /// <summary>
-    /// Cria um novo código de convite.
+    /// Cria um novo código de convite para um workspace.
     /// </summary>
-    Task<InviteCodeResponse> CreateAsync(CreateInviteCodeRequest request);
+    /// <returns>
+    /// O código criado, ou <c>null</c> se o workspace informado não existir.
+    /// </returns>
+    Task<InviteCodeResponse?> CreateAsync(CreateInviteCodeRequest request);
 
     /// <summary>
     /// Exclui um código de convite pelo ID.

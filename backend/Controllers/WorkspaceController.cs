@@ -1,5 +1,6 @@
 using EloDeCuidado.DTOs;
 using EloDeCuidado.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EloDeCuidado.Controllers;
@@ -26,12 +27,26 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
     }
 
     /// <summary>
-    /// Cria um novo workspace.
+    /// Cria um novo workspace. O usuário autenticado se torna o administrador.
     /// </summary>
+    /// <remarks>
+    /// O sujeito acompanhado é registrado apenas pelo nome e não recebe acesso
+    /// automático. Para que ele participe, gere um código de convite depois.
+    /// </remarks>
+    /// <response code="200">Workspace criado.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    [Authorize]
     [HttpPost]
+    [ProducesResponseType(typeof(WorkspaceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Create([FromBody] CreateWorkspaceRequest request)
     {
-        var workspace = await workspaceService.CreateAsync(request);
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var workspace = await workspaceService.CreateAsync(request, userId.Value);
 
         return Ok(workspace);
     }

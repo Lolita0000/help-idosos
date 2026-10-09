@@ -1,4 +1,4 @@
-﻿namespace EloDeCuidado.DTOs.InviteCode;
+namespace EloDeCuidado.DTOs.InviteCode;
 
 /// <summary>
 /// DTO para criação de um código de convite.
@@ -6,7 +6,14 @@
 public class CreateInviteCodeRequest
 {
     /// <summary>
-    /// A data de expiração do código de convite. Opcional. Se não for fornecida, o código de convite expirará em 7 dias a partir da data de criação.
+    /// O workspace ao qual o código dá acesso. Obrigatório.
+    /// </summary>
+    public int WorkspaceId { get; set; }
+
+    /// <summary>
+    /// A data de expiração do código. Opcional. Quando não informada, o código
+    /// expira em 24 horas, conforme a RN-005. Valores acima desse limite são
+    /// ajustados para 24 horas.
     /// </summary>
     public DateTime? ExpiresAt { get; set; }
 }
