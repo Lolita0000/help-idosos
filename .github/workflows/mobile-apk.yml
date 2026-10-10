@@ -1,0 +1,115 @@
+name: Mobile — APK e versão web
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, feat/mobile-v0.1]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-apk.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mobile-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Checar tipos
+        run: npx tsc --noEmit
+
+      - name: Gerar projeto Android (prebuild)
+        run: npx expo prebuild --platform android --no-install
+        env:
+          CI: 1
+
+      - name: Compilar APK de release
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+      - name: Renomear APK
+        run: |
+          mkdir -p ../out
+          cp android/app/build/outputs/apk/release/app-release.apk ../out/elo-de-cuidado-v0.1.apk
+          ls -la ../out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: elo-de-cuidado-v0.1-apk
+          path: out/elo-de-cuidado-v0.1.apk
+          retention-days: 30
+
+      - name: Publicar na release mobile-v0.1
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view mobile-v0.1 >/dev/null 2>&1 || gh release create mobile-v0.1 \
+            --target "${GITHUB_SHA}" --prerelease \
+            --title "Elo de Cuidado — app Android v0.1 (Fundação e Acesso)" \
+            --notes "APK da entrega v0.1: HU-02 cadastrar, HU-13 autenticar, HU-01 criar workspace e HU-03 entrar por convite."
+          gh release upload mobile-v0.1 out/elo-de-cuidado-v0.1.apk --clobber
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Exportar versão web
+        run: npx expo export --platform web --output-dir dist
+        env:
+          CI: 1
+          EXPO_BASE_URL: /${{ github.event.repository.name }}
+
+      - name: Publicar no branch gh-pages (GitHub Pages)
+        working-directory: mobile/dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp index.html 404.html
+          touch .nojekyll
+          git init -q -b gh-pages
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Versão web do app — ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
