@@ -1,0 +1,40 @@
+name: Backend, testes
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "backend-tests/**"
+      - "global.json"
+      - ".github/workflows/backend-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "backend-tests/**"
+      - "global.json"
+      - ".github/workflows/backend-tests.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: backend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # Sem --no-build, de proposito. O global.json declara o runner
+      # Microsoft.Testing.Platform, e com --no-build o dotnet test nao consegue
+      # avaliar a propriedade TestingPlatformDotnetTestSupport do csproj: ele
+      # classifica o projeto como VSTest, falha e roda zero teste, deixando o
+      # workflow passar sem ter testado nada.
+      - name: Testar
+        run: dotnet test --project backend-tests/EloDeCuidado.Tests/EloDeCuidado.Tests.csproj
