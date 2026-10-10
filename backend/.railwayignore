@@ -1,0 +1,24 @@
+# O "railway up" envia o conteúdo desta pasta para a plataforma. Diferente do
+# build do Docker, que respeita o .dockerignore, o upload do CLI usa este arquivo.
+
+# Segredos e configuração local. O appsettings.json NÃO entra nesta lista: ele
+# traz Jwt:Issuer e Jwt:Audience, necessários para validar o token. O segredo que
+# ele contém é o marcador de desenvolvimento, e a aplicação se recusa a subir com
+# ele fora de Development, obrigando a definir Jwt__Secret por variável de ambiente.
+.env
+.env.*
+*.user
+secrets.json
+
+# Artefatos de compilação. São 33 MB que a plataforma recompila do zero a cada
+# deploy, e enviá-los ainda arrisca contaminar o build com binários antigos.
+bin/
+obj/
+
+# Ferramentas e editores
+.vs/
+.idea/
+.vscode/
+
+# Já reconstruído dentro da imagem
+**/node_modules/
