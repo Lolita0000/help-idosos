@@ -8,7 +8,8 @@ namespace EloDeCuidado.Controllers;
 /// <summary>
 /// Endpoints para gerenciamento de códigos de convite. Todas as rotas exigem token
 /// válido, e gerar, consultar ou remover um código é privilégio do administrador do
-/// workspace (RN-001).
+/// workspace (RN-001). O ingresso é a exceção: qualquer usuário autenticado que
+/// tenha um código válido pode entrar.
 /// </summary>
 /// <param name="inviteCodeService">Serviço dos códigos de convite.</param>
 /// <param name="workspaceService">Usado para verificar o papel do solicitante.</param>
@@ -48,6 +49,64 @@ public sealed class InviteCodeController(
             return NotFound(new { error = "Workspace não encontrado." });
 
         return Ok(inviteCode);
+    }
+
+    /// <summary>
+    /// Ingressa no workspace do código informado, como membro com papel padrão (HU-03).
+    /// </summary>
+    /// <remarks>
+    /// Esta rota não exige papel de administrador: é o caminho pelo qual um convidado
+    /// entra. O código é aceito com ou sem hífen e em qualquer caixa.
+    /// </remarks>
+    /// <response code="200">Ingresso realizado. Retorna o workspace.</response>
+    /// <response code="400">Código em branco.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    /// <response code="404">Código inexistente.</response>
+    /// <response code="409">O usuário já participa do workspace.</response>
+    /// <response code="410">Código expirado, com mais de 24 horas (RN-005).</response>
+    [HttpPost("join")]
+    [ProducesResponseType(typeof(DTOs.WorkspaceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public async Task<IActionResult> Join([FromBody] JoinWithCodeRequest request)
+    {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var result = await inviteCodeService.JoinAsync(request.Code, userId.Value);
+
+        // Cada desfecho tem um código próprio no corpo, porque o aplicativo
+        // mostra mensagens diferentes para cada um.
+        return result.Status switch
+        {
+            JoinStatus.Joined =>
+                Ok(await workspaceService.GetByIdAsync(result.WorkspaceId!.Value, userId)),
+
+            JoinStatus.Empty =>
+                BadRequest(new { error = "Informe o código de convite." }),
+
+            JoinStatus.NotFound => NotFound(new
+            {
+                error = "Código inválido. Verifique o código e tente novamente.",
+                code = "INVITE_INVALID",
+            }),
+
+            JoinStatus.Expired => StatusCode(StatusCodes.Status410Gone, new
+            {
+                error = "Este código expirou (validade de 24 horas). Peça um novo código ao administrador.",
+                code = "INVITE_EXPIRED",
+            }),
+
+            _ => Conflict(new
+            {
+                error = "Você já faz parte deste workspace.",
+                code = "ALREADY_MEMBER",
+            }),
+        };
     }
 
     /// <summary>
