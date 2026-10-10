@@ -96,6 +96,37 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
     }
 
     /// <summary>
+    /// Lista os participantes de um workspace, com administradores primeiro.
+    /// </summary>
+    /// <response code="200">Participantes do workspace.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    /// <response code="403">O usuário não participa deste workspace.</response>
+    /// <response code="404">Workspace não encontrado.</response>
+    [Authorize]
+    [HttpGet("{id:int}/members")]
+    [ProducesResponseType(typeof(IEnumerable<WorkspaceMemberResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMembers(int id)
+    {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var members = await workspaceService.GetMembersAsync(id);
+
+        if (members is null)
+            return NotFound();
+
+        // Apenas quem participa do workspace enxerga seus membros (RNF-002).
+        if (!await workspaceService.IsMemberAsync(id, userId.Value))
+            return Forbid();
+
+        return Ok(members);
+    }
+
+    /// <summary>
     /// Atualiza os dados de um workspace existente.
     /// </summary>
     [HttpPatch("{id:int}")]

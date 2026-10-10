@@ -37,6 +37,14 @@ public interface IWorkspaceService
     Task<WorkspaceResponse> CreateAsync(CreateWorkspaceRequest request, int creatorUserId);
 
     /// <summary>
+    /// Retorna os participantes de um workspace, com administradores primeiro.
+    /// </summary>
+    /// <returns>
+    /// A lista de participantes, ou <c>null</c> se o workspace não existir.
+    /// </returns>
+    Task<IReadOnlyList<WorkspaceMemberResponse>?> GetMembersAsync(int workspaceId);
+
+    /// <summary>
     /// Atualiza os dados de um workspace existente. Todos os campos são opcionais.
     /// </summary>
     Task<WorkspaceResponse?> UpdateAsync(int id, UpdateWorkspaceRequest request);

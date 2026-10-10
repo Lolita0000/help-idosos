@@ -75,6 +75,34 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<WorkspaceMemberResponse>?> GetMembersAsync(int workspaceId)
+    {
+        var exists = await db.Workspaces.AnyAsync(w => w.Id == workspaceId);
+
+        if (!exists)
+            return null;
+
+        var members = await db.WorkspaceMembers
+            .Where(m => m.WorkspaceId == workspaceId)
+            .Include(m => m.User)
+            // Administradores primeiro, como na tela de membros; dentro de cada
+            // grupo, pela ordem de ingresso.
+            .OrderBy(m => m.Role)
+            .ThenBy(m => m.JoinedAt)
+            .ToListAsync();
+
+        return members
+            .Select(m => new WorkspaceMemberResponse(
+                m.UserId,
+                m.User.Name,
+                m.User.Email,
+                RoleName(m.Role),
+                m.IsSubject,
+                m.JoinedAt))
+            .ToList();
+    }
+
+    /// <inheritdoc />
     public async Task<WorkspaceResponse?> UpdateAsync(int id, UpdateWorkspaceRequest request)
     {
         var workspace = await LoadWithMembersAsync(id);
