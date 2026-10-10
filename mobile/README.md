@@ -53,11 +53,20 @@ O app tem uma camada de dados única (`src/core`, o núcleo compartilhado) com d
   EXPO_PUBLIC_API_URL=https://sua-api npx expo start
   ```
 
-  Rotas que o app já consome e existem no backend: `POST /api/auth/register`, `POST /api/auth/login`,
-  `POST /api/workspaces`, `POST /api/invite-code`, `DELETE /api/invite-code/{id}`.
-  Rotas que o backend ainda precisa expor para a jornada completa (contrato descrito em `httpApi.ts`):
-  `GET /api/auth/me`, `GET /api/workspaces/mine`, `GET /api/workspaces/{id}/detail`,
-  `GET /api/invite-code?workspaceId=`, `POST /api/invite-code/join`.
+  Rotas que o `httpApi.ts` consome:
+
+  | Método | Rota | Observação |
+  |---|---|---|
+  | `POST` | `/api/auth/register` | |
+  | `POST` | `/api/auth/login` | |
+  | `GET` | `/api/workspaces` | |
+  | `POST` | `/api/workspaces` | |
+  | `GET` | `/api/workspaces/{id}` | |
+  | `GET` | `/api/workspaces/{id}/members` | |
+  | `GET` | `/api/invite-code?workspaceId=` | depende do merge da issue #51 |
+  | `POST` | `/api/invite-code` | |
+  | `POST` | `/api/invite-code/join` | depende do merge da issue #51 |
+  | `DELETE` | `/api/invite-code/{id}` | |
 
 ## Gerar o APK
 
