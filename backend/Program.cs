@@ -3,6 +3,7 @@ using System.Text;
 using EloDeCuidado.Data;
 using EloDeCuidado.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -110,7 +111,30 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-// Configure the HTTP request pipeline.
+// Em hospedagem gerenciada o TLS termina no proxy da plataforma, e o contêiner
+// recebe a requisição em HTTP puro. Sem ler o X-Forwarded-Proto, o
+// UseHttpsRedirection abaixo não reconheceria a chamada original como segura e
+// redirecionaria todas elas para HTTPS, criando um laço de redirecionamento que
+// derruba a API inteira. Precisa vir antes dele.
+if (!app.Environment.IsDevelopment())
+{
+    var forwardedHeaders = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
+    };
+
+    // O endereço do proxy da plataforma não é fixo nem conhecido de antemão, então
+    // não há lista de proxies a declarar. Confiar no cabeçalho só é aceitável
+    // porque a borda da plataforma é o único caminho de entrada: o contêiner não
+    // recebe tráfego direto da internet.
+    forwardedHeaders.KnownNetworks.Clear();
+    forwardedHeaders.KnownProxies.Clear();
+
+    app.UseForwardedHeaders(forwardedHeaders);
+}
+
+app.UseHttpsRedirection();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -119,8 +143,6 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
     });
 }
-
-app.UseHttpsRedirection();
 
 // A ordem importa: a autenticação identifica quem é o usuário e precisa vir
 // antes da autorização, que decide o que ele pode acessar.
