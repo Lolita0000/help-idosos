@@ -20,9 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      # URL pública da API (Settings → Secrets and variables → Actions → Variables → API_URL).
-      # Sem ela, o APK roda em modo demonstração, com os dados no próprio aparelho.
-      EXPO_PUBLIC_API_URL: ${{ vars.API_URL }}
+      # URL pública da API hospedada no Railway. Pode ser trocada pela variável de
+      # repositório API_URL (Settings → Secrets and variables → Actions → Variables).
+      EXPO_PUBLIC_API_URL: ${{ vars.API_URL || 'https://api-production-457f.up.railway.app' }}
     defaults:
       run:
         working-directory: mobile

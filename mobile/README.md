@@ -12,9 +12,8 @@ do Plano de Iterações, seguindo a página **"Mobile – MVP v1.0"** do Figma.
 
 Fora desta entrega (v0.2 em diante): diário, edição/exclusão de registros, histórico e exclusão de conta.
 
-## Como avaliar (sem instalar nada)
+## Como avaliar
 
-- **Web:** https://lolita0000.github.io/help-idosos/ (funciona no navegador do celular ou do computador)
 - **Android:** baixe o `elo-de-cuidado-v0.1.apk` na release
   [mobile-v0.1](https://github.com/Lolita0000/help-idosos/releases/tag/mobile-v0.1) e instale
   (o Android pede para permitir a instalação de fontes desconhecidas).
@@ -27,7 +26,7 @@ minúscula, número e caractere especial, ex.: `Cuidado@2026`). Roteiro da v0.1:
 3. Em **Acessar Workspace → Convites → Convidar membros**, gere um código e anote-o.
 4. Abra o menu (☰) → **Sair da conta**, crie uma segunda conta e use **Entrar com código** (HU-03).
 
-Os dados ficam salvos no próprio aparelho/navegador (veja "Onde ficam os dados").
+O APK usa a API do grupo hospedada no Railway: `https://api-production-457f.up.railway.app`.
 
 ## Rodar no celular com Expo Go
 
