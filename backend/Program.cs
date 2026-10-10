@@ -135,14 +135,14 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-if (app.Environment.IsDevelopment())
+// A documentação fica disponível também em produção. Todas as rotas exigem token
+// desde a #50, então o Swagger expõe o contrato, não os dados, e é por onde a
+// equipe e o professor verificam a API publicada.
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-    });
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+});
 
 // A ordem importa: a autenticação identifica quem é o usuário e precisa vir
 // antes da autorização, que decide o que ele pode acessar.
