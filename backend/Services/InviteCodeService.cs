@@ -83,9 +83,70 @@ public sealed class InviteCodeService(AppDbContext db) : IInviteCodeService
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<InviteCodeResponse>> GetByWorkspaceAsync(int workspaceId)
+    {
+        var codes = await db.InviteCodes
+            .Where(c => c.WorkspaceId == workspaceId)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+
+        return codes.Select(ToResponse.InviteCode).ToList();
+    }
+
+    /// <inheritdoc />
     public async Task<int?> GetWorkspaceIdAsync(int inviteCodeId) =>
         await db.InviteCodes
             .Where(c => c.Id == inviteCodeId)
             .Select(c => (int?)c.WorkspaceId)
             .FirstOrDefaultAsync();
+
+    /// <inheritdoc />
+    public async Task<JoinResult> JoinAsync(string? code, int userId)
+    {
+        var normalized = Normalize(code);
+
+        if (normalized.Length == 0)
+            return new JoinResult(JoinStatus.Empty);
+
+        var inviteCode = await db.InviteCodes.FirstOrDefaultAsync(c => c.Code == normalized);
+
+        if (inviteCode is null)
+            return new JoinResult(JoinStatus.NotFound);
+
+        // Código expirado não pode ser usado; o administrador precisa gerar
+        // outro (RN-005). O vínculo não é criado.
+        if (inviteCode.ExpiresAt <= DateTime.UtcNow)
+            return new JoinResult(JoinStatus.Expired, inviteCode.WorkspaceId);
+
+        var alreadyMember = await db.WorkspaceMembers
+            .AnyAsync(m => m.WorkspaceId == inviteCode.WorkspaceId && m.UserId == userId);
+
+        // Reingresso não duplica o vínculo (HU-03, cenário 4).
+        if (alreadyMember)
+            return new JoinResult(JoinStatus.AlreadyMember, inviteCode.WorkspaceId);
+
+        // Quem entra por convite é membro comum, qualquer que seja sua relação
+        // com o sujeito acompanhado (RN-004). Só o criador administra (RN-001).
+        db.WorkspaceMembers.Add(new WorkspaceMember
+        {
+            WorkspaceId = inviteCode.WorkspaceId,
+            UserId = userId,
+            Role = MemberRole.Member,
+            IsSubject = false,
+        });
+        await db.SaveChangesAsync();
+
+        return new JoinResult(JoinStatus.Joined, inviteCode.WorkspaceId);
+    }
+
+    /// <summary>
+    /// Aceita o código como o usuário digita. Ele é exibido no formato
+    /// <c>KHO6-NY67</c>, então exigir a forma exata quebraria o uso normal:
+    /// hífen, espaços e minúsculas são descartados antes da comparação.
+    /// </summary>
+    private static string Normalize(string? code) =>
+        new((code ?? string.Empty)
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToUpperInvariant)
+            .ToArray());
 }
