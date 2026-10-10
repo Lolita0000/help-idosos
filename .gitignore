@@ -4,3 +4,6 @@ bin
 obj
 .DS_Store
 package-lock.json
+
+# Dependencias de Node (app mobile e ferramentas)
+node_modules/

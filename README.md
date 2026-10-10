@@ -1,7 +1,7 @@
 # Elo de Cuidado 💙
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue.svg?cacheSeconds=2592000)
-![React](https://img.shields.io/badge/React-TypeScript-blue.svg)
+![React Native](https://img.shields.io/badge/React_Native-Expo-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-ASP.NET_Core-purple.svg)
 ![Database](https://img.shields.io/badge/Database-MariaDB-teal.svg)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Lolita0000/help-idosos/graphs/commit-activity)
@@ -29,7 +29,7 @@ Diferente de aplicativos como MyTherapy, Medisafe ou Google Keep, focados em uso
 
 | Camada | Tecnologia |
 |---|---|
-| Frontend | React + TypeScript |
+| Aplicativo | React Native + Expo (Android) |
 | Backend | ASP.NET Core (.NET 10) |
 | Banco de dados | MariaDB |
 | ORM | Entity Framework |
@@ -40,9 +40,10 @@ Diferente de aplicativos como MyTherapy, Medisafe ou Google Keep, focados em uso
 
 ```
 /
-├── backend/    # API REST em ASP.NET Core
-├── frontend/   # Interface em React + TypeScript
-└── docs/       # Documentação técnica e diagramas
+├── backend/        # API REST em ASP.NET Core
+├── backend-tests/  # Testes automatizados da API
+├── mobile/         # Aplicativo Android em React Native + Expo
+└── docs/           # Documentação técnica e diagramas
 ```
 
 ## Como rodar
