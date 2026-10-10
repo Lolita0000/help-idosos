@@ -52,6 +52,35 @@ public sealed class InviteCodeController(
     }
 
     /// <summary>
+    /// Lista os códigos de convite de um workspace, ativos e expirados. Apenas o
+    /// administrador.
+    /// </summary>
+    /// <remarks>
+    /// Os expirados são incluídos de propósito: a tela de convites mostra os dois
+    /// estados, para o administrador entender por que um código deixou de funcionar.
+    /// </remarks>
+    /// <response code="200">Códigos do workspace, do mais recente para o mais antigo.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    /// <response code="403">O usuário não administra este workspace (ou ele não existe).</response>
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<InviteCodeResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetByWorkspace([FromQuery] int workspaceId)
+    {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        // O código é o próprio segredo de acesso ao workspace: listá-los é
+        // privilégio de quem administra (RN-001, RNF-002).
+        if (!await workspaceService.IsAdminAsync(workspaceId, userId.Value))
+            return Forbid();
+
+        return Ok(await inviteCodeService.GetByWorkspaceAsync(workspaceId));
+    }
+
+    /// <summary>
     /// Ingressa no workspace do código informado, como membro com papel padrão (HU-03).
     /// </summary>
     /// <remarks>

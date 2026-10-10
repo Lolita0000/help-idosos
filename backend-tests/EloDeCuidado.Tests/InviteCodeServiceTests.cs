@@ -186,6 +186,48 @@ public class InviteCodeServiceTests : IAsyncLifetime
         Assert.Null(await service.GetWorkspaceIdAsync(999));
     }
 
+    [Fact]
+    public async Task GetByWorkspaceAsync_DeveListarDoMaisRecenteParaOMaisAntigo()
+    {
+        // Ordem da tela de convites: o código recém-gerado aparece primeiro.
+
+        var service = new InviteCodeService(_db);
+        var primeiro = await service.CreateAsync(new CreateInviteCodeRequest { WorkspaceId = _workspaceId });
+        var entidade = await _db.InviteCodes.FindAsync(primeiro!.Id);
+        entidade!.CreatedAt = DateTime.UtcNow.AddHours(-1);
+        await _db.SaveChangesAsync();
+        var segundo = await service.CreateAsync(new CreateInviteCodeRequest { WorkspaceId = _workspaceId });
+
+        var lista = await service.GetByWorkspaceAsync(_workspaceId);
+
+        Assert.Equal(new[] { segundo!.Id, primeiro.Id }, lista.Select(c => c.Id));
+    }
+
+    [Fact]
+    public async Task GetByWorkspaceAsync_DeveIncluirCodigosExpirados()
+    {
+        // A tela mostra ativos e expirados, para o administrador entender por que
+        // um código deixou de funcionar.
+
+        var service = new InviteCodeService(_db);
+        var criado = await service.CreateAsync(new CreateInviteCodeRequest { WorkspaceId = _workspaceId });
+        var entidade = await _db.InviteCodes.FindAsync(criado!.Id);
+        entidade!.ExpiresAt = DateTime.UtcNow.AddMinutes(-1);
+        await _db.SaveChangesAsync();
+
+        var lista = await service.GetByWorkspaceAsync(_workspaceId);
+
+        Assert.Equal(criado.Id, Assert.Single(lista).Id);
+    }
+
+    [Fact]
+    public async Task GetByWorkspaceAsync_DeveRetornarVazio_QuandoWorkspaceNaoTemCodigo()
+    {
+        var service = new InviteCodeService(_db);
+
+        Assert.Empty(await service.GetByWorkspaceAsync(_workspaceId));
+    }
+
     // HU-03, ingresso por código de convite
 
     /// <summary>

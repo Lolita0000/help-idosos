@@ -83,6 +83,17 @@ public sealed class InviteCodeService(AppDbContext db) : IInviteCodeService
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<InviteCodeResponse>> GetByWorkspaceAsync(int workspaceId)
+    {
+        var codes = await db.InviteCodes
+            .Where(c => c.WorkspaceId == workspaceId)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+
+        return codes.Select(ToResponse.InviteCode).ToList();
+    }
+
+    /// <inheritdoc />
     public async Task<int?> GetWorkspaceIdAsync(int inviteCodeId) =>
         await db.InviteCodes
             .Where(c => c.Id == inviteCodeId)
