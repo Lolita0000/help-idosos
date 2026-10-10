@@ -9,6 +9,10 @@ namespace EloDeCuidado.DTOs;
 /// <param name="SubjectName">Nome da pessoa acompanhada.</param>
 /// <param name="CreatedBy">Nome de quem criou o workspace.</param>
 /// <param name="MemberCount">Quantidade de membros.</param>
+/// <param name="MyRole">
+/// Papel do usuário autenticado neste workspace: <c>admin</c> ou <c>member</c>.
+/// Nulo quando o solicitante não participa do workspace.
+/// </param>
 /// <param name="CreatedAt">Momento da criação.</param>
 public sealed record WorkspaceResponse(
     int Id,
@@ -17,5 +21,6 @@ public sealed record WorkspaceResponse(
     string SubjectName,
     string CreatedBy,
     int MemberCount,
+    string? MyRole,
     DateTime CreatedAt
 );

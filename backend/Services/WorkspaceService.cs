@@ -11,14 +11,31 @@ namespace EloDeCuidado.Services;
 public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
 {
     /// <inheritdoc />
-    public async Task<WorkspaceResponse?> GetByIdAsync(int id)
+    public async Task<WorkspaceResponse?> GetByIdAsync(int id, int? viewerUserId = null)
     {
-        var workspace = await db.Workspaces
+        var workspace = await LoadWithMembersAsync(id);
+
+        return workspace is null ? null : ToResponse(workspace, viewerUserId);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<WorkspaceResponse>> GetByUserAsync(int userId, MemberRole? role = null)
+    {
+        var query = db.Workspaces
+            .Where(w => w.Members.Any(m => m.UserId == userId));
+
+        // O filtro das abas Todos / Admin / Membro considera o papel do
+        // solicitante, e não o papel de outros participantes.
+        if (role is not null)
+            query = query.Where(w => w.Members.Any(m => m.UserId == userId && m.Role == role));
+
+        var workspaces = await query
             .Include(w => w.Members)
             .ThenInclude(m => m.User)
-            .FirstOrDefaultAsync(w => w.Id == id);
+            .OrderByDescending(w => w.CreatedAt)
+            .ToListAsync();
 
-        return workspace is null ? null : ToResponse(workspace);
+        return workspaces.Select(w => ToResponse(w, userId)).ToList();
     }
 
     /// <inheritdoc />
@@ -54,16 +71,41 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
             .Include(m => m.User)
             .LoadAsync();
 
-        return ToResponse(workspace);
+        return ToResponse(workspace, creatorUserId);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<WorkspaceMemberResponse>?> GetMembersAsync(int workspaceId)
+    {
+        var exists = await db.Workspaces.AnyAsync(w => w.Id == workspaceId);
+
+        if (!exists)
+            return null;
+
+        var members = await db.WorkspaceMembers
+            .Where(m => m.WorkspaceId == workspaceId)
+            .Include(m => m.User)
+            // Administradores primeiro, como na tela de membros; dentro de cada
+            // grupo, pela ordem de ingresso.
+            .OrderBy(m => m.Role)
+            .ThenBy(m => m.JoinedAt)
+            .ToListAsync();
+
+        return members
+            .Select(m => new WorkspaceMemberResponse(
+                m.UserId,
+                m.User.Name,
+                m.User.Email,
+                RoleName(m.Role),
+                m.IsSubject,
+                m.JoinedAt))
+            .ToList();
     }
 
     /// <inheritdoc />
     public async Task<WorkspaceResponse?> UpdateAsync(int id, UpdateWorkspaceRequest request)
     {
-        var workspace = await db.Workspaces
-            .Include(w => w.Members)
-            .ThenInclude(m => m.User)
-            .FirstOrDefaultAsync(w => w.Id == id);
+        var workspace = await LoadWithMembersAsync(id);
 
         if (workspace is null)
             return null;
@@ -81,7 +123,7 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
 
         await db.SaveChangesAsync();
 
-        return ToResponse(workspace);
+        return ToResponse(workspace, null);
     }
 
     /// <inheritdoc />
@@ -103,12 +145,32 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
         await db.WorkspaceMembers
             .AnyAsync(m => m.WorkspaceId == workspaceId && m.UserId == userId);
 
-    private static WorkspaceResponse ToResponse(Workspace workspace)
+    private async Task<Workspace?> LoadWithMembersAsync(int id) =>
+        await db.Workspaces
+            .Include(w => w.Members)
+            .ThenInclude(m => m.User)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+    /// <summary>
+    /// Nome do papel exposto na API, em minúsculas, para o cliente não depender
+    /// da representação numérica do enum.
+    /// </summary>
+    internal static string RoleName(MemberRole role) =>
+        role == MemberRole.Admin ? "admin" : "member";
+
+    private static WorkspaceResponse ToResponse(Workspace workspace, int? viewerUserId)
     {
         // O administrador é o criador do workspace (RN-001).
         var creator = workspace.Members
             .FirstOrDefault(m => m.Role == MemberRole.Admin)?.User?.Name
             ?? string.Empty;
+
+        var myRole = viewerUserId is null
+            ? null
+            : workspace.Members
+                .Where(m => m.UserId == viewerUserId)
+                .Select(m => RoleName(m.Role))
+                .FirstOrDefault();
 
         return new WorkspaceResponse(
             workspace.Id,
@@ -117,6 +179,7 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
             workspace.SubjectName,
             creator,
             workspace.Members.Count,
+            myRole,
             workspace.CreatedAt);
     }
 }
