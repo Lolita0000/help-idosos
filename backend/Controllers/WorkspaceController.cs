@@ -57,15 +57,33 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
     }
 
     /// <summary>
-    /// Retorna os dados de um workspace pelo ID.
+    /// Retorna os dados de um workspace pelo ID. Apenas para quem participa dele.
     /// </summary>
+    /// <response code="200">Dados do workspace.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    /// <response code="403">O usuário não participa deste workspace.</response>
+    /// <response code="404">Workspace não encontrado.</response>
+    [Authorize]
     [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(WorkspaceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(int id)
     {
-        var workspace = await workspaceService.GetByIdAsync(id, this.GetAuthenticatedUserId());
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var workspace = await workspaceService.GetByIdAsync(id, userId);
 
         if (workspace is null)
             return NotFound();
+
+        // O workspace expõe o nome da pessoa acompanhada, que é dado pessoal:
+        // só quem participa pode lê-lo (RNF-002).
+        if (!await workspaceService.IsMemberAsync(id, userId.Value))
+            return Forbid();
 
         return Ok(workspace);
     }
@@ -127,11 +145,27 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
     }
 
     /// <summary>
-    /// Atualiza os dados de um workspace existente.
+    /// Atualiza os dados de um workspace existente. Apenas o administrador.
     /// </summary>
+    /// <response code="200">Workspace atualizado.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    /// <response code="403">O usuário não administra este workspace (ou ele não existe).</response>
+    [Authorize]
     [HttpPatch("{id:int}")]
+    [ProducesResponseType(typeof(WorkspaceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateWorkspaceRequest request)
     {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        // A resposta é a mesma para workspace inexistente e alheio, para não
+        // revelar quais ids existem (RNF-002).
+        if (!await workspaceService.IsAdminAsync(id, userId.Value))
+            return Forbid();
+
         var workspace = await workspaceService.UpdateAsync(id, request);
 
         if (workspace is null)
@@ -141,11 +175,30 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
     }
 
     /// <summary>
-    /// Deleta um workspace pelo ID.
+    /// Deleta um workspace pelo ID. Apenas o administrador.
     /// </summary>
+    /// <remarks>
+    /// A confirmação em duas etapas e as regras de retenção das entradas do
+    /// diário são tratadas na #65 (Zona de Perigo, RN-012). Aqui a rota apenas
+    /// deixa de estar aberta.
+    /// </remarks>
+    /// <response code="204">Workspace excluído.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    /// <response code="403">O usuário não administra este workspace (ou ele não existe).</response>
+    [Authorize]
     [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(int id)
     {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        if (!await workspaceService.IsAdminAsync(id, userId.Value))
+            return Forbid();
+
         var deleted = await workspaceService.DeleteAsync(id);
 
         return !deleted ? NotFound() : NoContent();

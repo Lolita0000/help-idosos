@@ -58,4 +58,10 @@ public interface IWorkspaceService
     /// Indica se o usuário participa do workspace informado.
     /// </summary>
     Task<bool> IsMemberAsync(int workspaceId, int userId);
+
+    /// <summary>
+    /// Indica se o usuário é administrador do workspace informado. Só o
+    /// administrador altera e exclui o workspace e gerencia seus convites (RN-001).
+    /// </summary>
+    Task<bool> IsAdminAsync(int workspaceId, int userId);
 }

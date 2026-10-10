@@ -341,6 +341,32 @@ public class WorkspaceServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task IsAdminAsync_DeveDistinguirAdministradorDeMembroEDeEstranho()
+    {
+        // Base da restrição de alteração e exclusão do workspace (RN-001).
+
+        // Arrange
+        var service = new WorkspaceService(_db);
+        var criado = await service.CreateAsync(
+            new CreateWorkspaceRequest("Cuidados da Vovo", "Joana Pereira", null), _creatorUserId);
+
+        _db.WorkspaceMembers.Add(new WorkspaceMember
+        {
+            WorkspaceId = criado.Id,
+            UserId = _outsiderUserId,
+            Role = MemberRole.Member,
+        });
+        await _db.SaveChangesAsync();
+
+        // Act & Assert
+        Assert.True(await service.IsAdminAsync(criado.Id, _creatorUserId));
+        // Quem entrou por convite é membro comum e não administra (RN-004).
+        Assert.False(await service.IsAdminAsync(criado.Id, _outsiderUserId));
+        // Workspace inexistente não tem administrador: a rota responde 403 igual.
+        Assert.False(await service.IsAdminAsync(999, _creatorUserId));
+    }
+
+    [Fact]
     public async Task UpdateAsync_DeveAtualizarNome_QuandoIdExistir()
     {
         // Arrange
