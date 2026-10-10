@@ -1,4 +1,5 @@
 using EloDeCuidado.DTOs;
+using EloDeCuidado.Models;
 
 namespace EloDeCuidado.Services;
 
@@ -10,7 +11,23 @@ public interface IWorkspaceService
     /// <summary>
     /// Retorna um workspace pelo ID.
     /// </summary>
-    Task<WorkspaceResponse?> GetByIdAsync(int id);
+    /// <param name="id">Identificador do workspace.</param>
+    /// <param name="viewerUserId">
+    /// Usuário que faz a consulta, usado para preencher o papel dele no
+    /// workspace. Quando omitido, o papel retorna nulo.
+    /// </param>
+    Task<WorkspaceResponse?> GetByIdAsync(int id, int? viewerUserId = null);
+
+    /// <summary>
+    /// Retorna os workspaces dos quais o usuário participa, do mais recente
+    /// para o mais antigo.
+    /// </summary>
+    /// <param name="userId">Usuário autenticado.</param>
+    /// <param name="role">
+    /// Quando informado, restringe aos workspaces em que o usuário tem esse
+    /// papel. Corresponde às abas Admin e Membro da listagem.
+    /// </param>
+    Task<IReadOnlyList<WorkspaceResponse>> GetByUserAsync(int userId, MemberRole? role = null);
 
     /// <summary>
     /// Cria um novo workspace, vinculando o criador como administrador (RN-001).
