@@ -24,4 +24,10 @@ public interface IInviteCodeService
     /// Exclui um código de convite pelo ID.
     /// </summary>
     Task<bool> DeleteAsync(int id);
+
+    /// <summary>
+    /// Retorna o workspace ao qual o código pertence, ou <c>null</c> se o código
+    /// não existir. Permite decidir a autorização antes de expor o código.
+    /// </summary>
+    Task<int?> GetWorkspaceIdAsync(int inviteCodeId);
 }

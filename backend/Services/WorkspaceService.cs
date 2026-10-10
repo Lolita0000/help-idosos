@@ -145,6 +145,13 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
         await db.WorkspaceMembers
             .AnyAsync(m => m.WorkspaceId == workspaceId && m.UserId == userId);
 
+    /// <inheritdoc />
+    public async Task<bool> IsAdminAsync(int workspaceId, int userId) =>
+        await db.WorkspaceMembers
+            .AnyAsync(m => m.WorkspaceId == workspaceId
+                && m.UserId == userId
+                && m.Role == MemberRole.Admin);
+
     private async Task<Workspace?> LoadWithMembersAsync(int id) =>
         await db.Workspaces
             .Include(w => w.Members)

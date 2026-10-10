@@ -37,6 +37,26 @@ var jwtSecret = jwt["Secret"]
     ?? throw new InvalidOperationException(
         "A chave de assinatura do JWT não está configurada (Jwt:Secret).");
 
+// O valor que acompanha o repositório serve apenas para desenvolvimento local e
+// é público, por estar versionado. Em produção, assinar tokens com ele permitiria
+// a qualquer pessoa forjar um token para qualquer usuário. A aplicação se recusa
+// a subir nessa condição, em vez de subir insegura e em silêncio.
+const string developmentJwtSecret =
+    "desenvolvimento-apenas-trocar-em-producao-por-variavel-de-ambiente-32b+";
+
+if (!builder.Environment.IsDevelopment())
+{
+    if (jwtSecret == developmentJwtSecret)
+        throw new InvalidOperationException(
+            "A chave de assinatura do JWT ainda é a de desenvolvimento, que é pública. "
+            + "Defina Jwt__Secret por variável de ambiente antes de publicar.");
+
+    // HMAC-SHA256 exige pelo menos 256 bits de chave.
+    if (Encoding.UTF8.GetByteCount(jwtSecret) < 32)
+        throw new InvalidOperationException(
+            "A chave de assinatura do JWT precisa ter ao menos 32 bytes.");
+}
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

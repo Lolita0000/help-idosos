@@ -1,6 +1,8 @@
 # Setup — Elo de Cuidado
 
-Instruções para rodar o projeto. O caminho com **Docker é o recomendado**: sobe banco, backend e frontend com um comando só, e não exige instalar .NET nem MariaDB na máquina.
+Instruções para rodar o projeto. O caminho com **Docker é o recomendado**: sobe o banco e a API com um comando só, e não exige instalar .NET nem MariaDB na máquina.
+
+> A interface do projeto é o aplicativo Android, em `mobile/`. Para rodá-lo, veja o [README do app](mobile/README.md). Ele funciona em modo demonstração sem depender desta API.
 
 ## Pré-requisitos
 
@@ -48,13 +50,12 @@ A primeira execução leva alguns minutos, porque baixa as imagens do .NET SDK, 
 docker compose ps
 ```
 
-Os três serviços devem aparecer como `Up`, com o banco marcado `healthy`:
+Os dois serviços devem aparecer como `Up`, com o banco marcado `healthy`:
 
 ```
 SERVICE    STATUS                    PORTS
 backend    Up 25 seconds             0.0.0.0:8080->8080/tcp
 db         Up 46 seconds (healthy)   0.0.0.0:3307->3306/tcp
-frontend   Up 25 seconds             0.0.0.0:80->80/tcp
 ```
 
 Em seguida, confirme a mensagem de sucesso do backend:
@@ -77,7 +78,6 @@ docker compose logs backend | grep "Applying migration"
 
 | Serviço | Endereço |
 |---|---|
-| Frontend | http://localhost |
 | Swagger (documentação e teste da API) | http://localhost:8080/swagger |
 | Banco de dados (host) | `localhost:3307` |
 
@@ -152,7 +152,7 @@ docker compose down -v            # parar e apagar o banco, recomeçando do zero
 docker compose up -d --build      # reconstruir após mudar o código do backend
 ```
 
-> Ao alterar código do backend, é preciso reconstruir a imagem (`--build`). O frontend em modo de desenvolvimento recarrega sozinho.
+> Ao alterar código do backend, é preciso reconstruir a imagem (`--build`).
 
 ---
 
@@ -226,15 +226,17 @@ dotnet run
 
 > Use o `.csproj` explicitamente. A solução `EloDeCuidado.slnx` inclui o projeto de testes, que fica fora da pasta `backend/`.
 
-### 4. Rodar o frontend
+### 4. Rodar o aplicativo
+
+O app fica em `mobile/` e tem instruções próprias no [README do app](mobile/README.md).
 
 ```bash
-cd frontend
+cd mobile
 npm install
-npm run dev
+npx expo start
 ```
 
-Acesse `http://localhost:5173`.
+Sem a variável `EXPO_PUBLIC_API_URL`, o app roda em modo demonstração, com os dados no próprio aparelho, sem precisar desta API. Para apontar para a API local, consulte o README do app.
 
 ---
 
@@ -242,15 +244,18 @@ Acesse `http://localhost:5173`.
 
 ### Backend
 
-Exige o .NET SDK instalado. Na raiz do repositório:
+Exige o .NET SDK instalado. Na pasta do projeto de testes:
 
 ```bash
-dotnet test backend-tests/EloDeCuidado.Tests/EloDeCuidado.Tests.csproj
+cd backend-tests/EloDeCuidado.Tests
+dotnet test
 ```
 
-### Frontend
+> Rode de dentro da pasta do projeto. O `global.json` declara o runner `Microsoft.Testing.Platform`, e a combinação `--project` com `--no-build` faz o `dotnet test` não reconhecer o runner e rodar zero teste.
+
+### Aplicativo
 
 ```bash
-cd frontend
-npm run test
+cd mobile
+npx tsc --noEmit
 ```

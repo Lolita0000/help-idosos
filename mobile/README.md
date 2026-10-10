@@ -26,7 +26,7 @@ minúscula, número e caractere especial, ex.: `Cuidado@2026`). Roteiro da v0.1:
 3. Em **Acessar Workspace → Convites → Convidar membros**, gere um código e anote-o.
 4. Abra o menu (☰) → **Sair da conta**, crie uma segunda conta e use **Entrar com código** (HU-03).
 
-O APK usa a API do grupo hospedada no Railway: `https://api-production-457f.up.railway.app`.
+Por padrão o APK roda em **modo demonstração**, com os dados no próprio aparelho, sem depender de servidor. Para apontar o build para uma API real, defina a variável de repositório `API_URL` em Settings → Secrets and variables → Actions → Variables.
 
 ## Rodar no celular com Expo Go
 

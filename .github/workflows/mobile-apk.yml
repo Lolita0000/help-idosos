@@ -20,9 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      # URL pública da API hospedada no Railway. Pode ser trocada pela variável de
-      # repositório API_URL (Settings → Secrets and variables → Actions → Variables).
-      EXPO_PUBLIC_API_URL: ${{ vars.API_URL || 'https://api-production-457f.up.railway.app' }}
+      # URL pública da API, definida na variável de repositório API_URL
+      # (Settings → Secrets and variables → Actions → Variables).
+      #
+      # Sem valor de reserva, de propósito. O Expo grava EXPO_PUBLIC_* no bundle
+      # em tempo de build, e src/core/index.ts escolhe a implementação por
+      # `apiUrl ? createHttpApi(apiUrl) : localApi`. Qualquer valor aqui faz o app
+      # nunca entrar em modo demonstração: se o endereço não responder, o APK
+      # falha em toda chamada e não consegue nem cadastrar. Variável vazia é o
+      # que mantém o APK funcional sem servidor.
+      EXPO_PUBLIC_API_URL: ${{ vars.API_URL }}
     defaults:
       run:
         working-directory: mobile

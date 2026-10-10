@@ -81,4 +81,11 @@ public sealed class InviteCodeService(AppDbContext db) : IInviteCodeService
         await db.SaveChangesAsync();
         return true;
     }
+
+    /// <inheritdoc />
+    public async Task<int?> GetWorkspaceIdAsync(int inviteCodeId) =>
+        await db.InviteCodes
+            .Where(c => c.Id == inviteCodeId)
+            .Select(c => (int?)c.WorkspaceId)
+            .FirstOrDefaultAsync();
 }

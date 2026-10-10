@@ -162,4 +162,27 @@ public class InviteCodeServiceTests : IAsyncLifetime
         var deleteResult = await service.DeleteAsync(999);
         Assert.False(deleteResult);
     }
+
+    [Fact]
+    public async Task GetWorkspaceIdAsync_DeveApontarOWorkspaceDoCodigo()
+    {
+        // As rotas de convite decidem a autorização a partir deste valor: sem ele
+        // não há como saber qual workspace o código abre.
+
+        var service = new InviteCodeService(_db);
+        var criado = await service.CreateAsync(new CreateInviteCodeRequest { WorkspaceId = _workspaceId });
+
+        Assert.Equal(_workspaceId, await service.GetWorkspaceIdAsync(criado!.Id));
+    }
+
+    [Fact]
+    public async Task GetWorkspaceIdAsync_DeveRetornarNull_QuandoCodigoNaoExistir()
+    {
+        // Código inexistente não tem workspace, e a rota responde 403 igual ao
+        // caso de código alheio, para não revelar quais ids existem.
+
+        var service = new InviteCodeService(_db);
+
+        Assert.Null(await service.GetWorkspaceIdAsync(999));
+    }
 }
