@@ -1,4 +1,4 @@
-name: Mobile — APK e versão web
+name: Mobile — APK (Android)
 
 on:
   workflow_dispatch:
@@ -19,6 +19,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      # URL pública da API (Settings → Secrets and variables → Actions → Variables → API_URL).
+      # Sem ela, o APK roda em modo demonstração, com os dados no próprio aparelho.
+      EXPO_PUBLIC_API_URL: ${{ vars.API_URL }}
     defaults:
       run:
         working-directory: mobile
@@ -76,40 +80,3 @@ jobs:
             --notes "APK da entrega v0.1: HU-02 cadastrar, HU-13 autenticar, HU-01 criar workspace e HU-03 entrar por convite."
           gh release upload mobile-v0.1 out/elo-de-cuidado-v0.1.apk --clobber
 
-  web:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: mobile
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: Instalar dependências
-        run: npm ci
-
-      - name: Exportar versão web
-        run: npx expo export --platform web --output-dir dist
-        env:
-          CI: 1
-          EXPO_BASE_URL: /${{ github.event.repository.name }}
-
-      - name: Publicar no branch gh-pages (GitHub Pages)
-        working-directory: mobile/dist
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          cp index.html 404.html
-          touch .nojekyll
-          git init -q -b gh-pages
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
-          git add -A
-          git commit -q -m "Versão web do app — ${GITHUB_SHA::7}"
-          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages

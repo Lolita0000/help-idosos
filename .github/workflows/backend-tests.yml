@@ -1,0 +1,26 @@
+name: Backend — testes
+
+on:
+  pull_request:
+    paths: ["backend/**", "backend-tests/**", ".github/workflows/backend-tests.yml"]
+  push:
+    branches: [main, feat/mobile-v0.1]
+    paths: ["backend/**", "backend-tests/**", ".github/workflows/backend-tests.yml"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Compilar
+        run: dotnet build backend-tests/EloDeCuidado.Tests/EloDeCuidado.Tests.csproj
+
+      - name: Testar
+        run: dotnet test --project backend-tests/EloDeCuidado.Tests/EloDeCuidado.Tests.csproj --no-build

@@ -162,4 +162,120 @@ public class InviteCodeServiceTests : IAsyncLifetime
         var deleteResult = await service.DeleteAsync(999);
         Assert.False(deleteResult);
     }
+    // HU-03 — Entrar por convite
+
+    private async Task<string> NovoCodigoAsync(DateTime? expiresAt = null)
+    {
+        var service = new InviteCodeService(_db);
+        var created = await service.CreateAsync(new CreateInviteCodeRequest { WorkspaceId = _workspaceId });
+        if (expiresAt is not null)
+        {
+            var entity = await _db.InviteCodes.FindAsync(created!.Id);
+            entity!.ExpiresAt = expiresAt.Value;
+            await _db.SaveChangesAsync();
+        }
+        return created!.Code;
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveVincularComoMembro_QuandoCodigoValido()
+    {
+        var service = new InviteCodeService(_db);
+        var code = await NovoCodigoAsync();
+
+        var result = await service.JoinAsync(code, userId: 42);
+
+        Assert.Equal(JoinStatus.Joined, result.Status);
+        Assert.Equal(_workspaceId, result.WorkspaceId);
+        var member = Assert.Single(_db.WorkspaceMembers.Where(m => m.UserId == 42));
+        Assert.Equal(MemberRole.Member, member.Role);
+        Assert.False(member.IsSubject);
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveAceitarCodigoComHifenEMinusculas()
+    {
+        var service = new InviteCodeService(_db);
+        var code = await NovoCodigoAsync();
+        var digitado = $"{code[..4]}-{code[4..]}".ToLowerInvariant();
+
+        var result = await service.JoinAsync(digitado, userId: 7);
+
+        Assert.Equal(JoinStatus.Joined, result.Status);
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveRecusar_QuandoCodigoExpirado()
+    {
+        // RN-005: código com mais de 24 horas não é aceito.
+        var service = new InviteCodeService(_db);
+        var code = await NovoCodigoAsync(DateTime.UtcNow.AddMinutes(-1));
+
+        var result = await service.JoinAsync(code, userId: 42);
+
+        Assert.Equal(JoinStatus.Expired, result.Status);
+        Assert.Empty(_db.WorkspaceMembers.Where(m => m.UserId == 42));
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveRecusar_QuandoCodigoInexistente()
+    {
+        var service = new InviteCodeService(_db);
+
+        var result = await service.JoinAsync("ZZZZ9999", userId: 42);
+
+        Assert.Equal(JoinStatus.NotFound, result.Status);
+        Assert.Empty(_db.WorkspaceMembers.Where(m => m.UserId == 42));
+    }
+
+    [Fact]
+    public async Task JoinAsync_NaoDeveDuplicarVinculo_QuandoUsuarioJaEMembro()
+    {
+        var service = new InviteCodeService(_db);
+        var code = await NovoCodigoAsync();
+        await service.JoinAsync(code, userId: 42);
+
+        var result = await service.JoinAsync(code, userId: 42);
+
+        Assert.Equal(JoinStatus.AlreadyMember, result.Status);
+        Assert.Single(_db.WorkspaceMembers.Where(m => m.UserId == 42));
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveRecusar_QuandoCodigoEmBranco()
+    {
+        var service = new InviteCodeService(_db);
+
+        var result = await service.JoinAsync("  ", userId: 42);
+
+        Assert.Equal(JoinStatus.Empty, result.Status);
+    }
+
+    [Fact]
+    public async Task IsAdminAsync_DeveDistinguirAdministradorDeMembro()
+    {
+        var service = new InviteCodeService(_db);
+        _db.WorkspaceMembers.Add(new WorkspaceMember { WorkspaceId = _workspaceId, UserId = 1, Role = MemberRole.Admin });
+        _db.WorkspaceMembers.Add(new WorkspaceMember { WorkspaceId = _workspaceId, UserId = 2, Role = MemberRole.Member });
+        await _db.SaveChangesAsync();
+
+        Assert.True(await service.IsAdminAsync(_workspaceId, 1));
+        Assert.False(await service.IsAdminAsync(_workspaceId, 2));
+        Assert.False(await service.IsAdminAsync(_workspaceId, 3));
+    }
+
+    [Fact]
+    public async Task GetByWorkspaceAsync_DeveListarDoMaisRecenteParaOMaisAntigo()
+    {
+        var service = new InviteCodeService(_db);
+        var primeiro = await service.CreateAsync(new CreateInviteCodeRequest { WorkspaceId = _workspaceId });
+        var entity = await _db.InviteCodes.FindAsync(primeiro!.Id);
+        entity!.CreatedAt = DateTime.UtcNow.AddHours(-1);
+        await _db.SaveChangesAsync();
+        var segundo = await service.CreateAsync(new CreateInviteCodeRequest { WorkspaceId = _workspaceId });
+
+        var lista = await service.GetByWorkspaceAsync(_workspaceId);
+
+        Assert.Equal(new[] { segundo!.Id, primeiro.Id }, lista.Select(c => c.Id));
+    }
 }
