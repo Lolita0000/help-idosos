@@ -30,4 +30,14 @@ public interface IInviteCodeService
     /// não existir. Permite decidir a autorização antes de expor o código.
     /// </summary>
     Task<int?> GetWorkspaceIdAsync(int inviteCodeId);
+
+    /// <summary>
+    /// Vincula o usuário ao workspace do código informado, como membro com papel
+    /// padrão (HU-03, RN-004, RN-005).
+    /// </summary>
+    /// <param name="code">
+    /// Código como o usuário digitou. Hífen, espaços e minúsculas são aceitos.
+    /// </param>
+    /// <param name="userId">Usuário autenticado que está ingressando.</param>
+    Task<JoinResult> JoinAsync(string? code, int userId);
 }

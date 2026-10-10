@@ -185,4 +185,135 @@ public class InviteCodeServiceTests : IAsyncLifetime
 
         Assert.Null(await service.GetWorkspaceIdAsync(999));
     }
+
+    // HU-03, ingresso por código de convite
+
+    /// <summary>
+    /// Cria um código no workspace da fixture. Quando <paramref name="expiresAt"/> é
+    /// informado, sobrescreve a expiração direto na entidade, porque o serviço
+    /// limita a 24 horas e não permitiria gravar uma data no passado.
+    /// </summary>
+    private async Task<string> NovoCodigoAsync(DateTime? expiresAt = null)
+    {
+        var service = new InviteCodeService(_db);
+        var criado = await service.CreateAsync(new CreateInviteCodeRequest { WorkspaceId = _workspaceId });
+
+        if (expiresAt is not null)
+        {
+            var entidade = await _db.InviteCodes.FindAsync(criado!.Id);
+            entidade!.ExpiresAt = expiresAt.Value;
+            await _db.SaveChangesAsync();
+        }
+
+        return criado!.Code;
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveVincularComoMembroComum_QuandoCodigoValido()
+    {
+        // RN-004: quem entra por convite é membro comum, não administrador.
+
+        var service = new InviteCodeService(_db);
+        var codigo = await NovoCodigoAsync();
+
+        var result = await service.JoinAsync(codigo, userId: 42);
+
+        Assert.Equal(JoinStatus.Joined, result.Status);
+        Assert.Equal(_workspaceId, result.WorkspaceId);
+
+        var membro = Assert.Single(_db.WorkspaceMembers.Where(m => m.UserId == 42));
+        Assert.Equal(MemberRole.Member, membro.Role);
+        Assert.False(membro.IsSubject);
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveAceitarCodigoComHifenEMinusculas()
+    {
+        // O código é exibido como KHO6-NY67. Exigir a forma exata quebraria o
+        // uso normal, porque a pessoa digita o que vê.
+
+        var service = new InviteCodeService(_db);
+        var codigo = await NovoCodigoAsync();
+        var digitado = $"{codigo[..4]}-{codigo[4..]}".ToLowerInvariant();
+
+        var result = await service.JoinAsync(digitado, userId: 7);
+
+        Assert.Equal(JoinStatus.Joined, result.Status);
+        Assert.Single(_db.WorkspaceMembers.Where(m => m.UserId == 7));
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveRecusarENaoInserirMembro_QuandoCodigoExpirado()
+    {
+        // RN-005: código com mais de 24 horas não é aceito.
+
+        var service = new InviteCodeService(_db);
+        var codigo = await NovoCodigoAsync(DateTime.UtcNow.AddMinutes(-1));
+
+        var result = await service.JoinAsync(codigo, userId: 42);
+
+        Assert.Equal(JoinStatus.Expired, result.Status);
+        Assert.Empty(_db.WorkspaceMembers.Where(m => m.UserId == 42));
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveRecusar_QuandoCodigoInexistente()
+    {
+        var service = new InviteCodeService(_db);
+
+        var result = await service.JoinAsync("ZZZZ9999", userId: 42);
+
+        Assert.Equal(JoinStatus.NotFound, result.Status);
+        Assert.Null(result.WorkspaceId);
+        Assert.Empty(_db.WorkspaceMembers.Where(m => m.UserId == 42));
+    }
+
+    [Fact]
+    public async Task JoinAsync_DeveRecusar_QuandoCodigoEmBranco()
+    {
+        // Distinto de código inexistente: a rota responde 400, e não 404.
+
+        var service = new InviteCodeService(_db);
+
+        var result = await service.JoinAsync("  ", userId: 42);
+
+        Assert.Equal(JoinStatus.Empty, result.Status);
+        Assert.Empty(_db.WorkspaceMembers.Where(m => m.UserId == 42));
+    }
+
+    [Fact]
+    public async Task JoinAsync_NaoDeveDuplicarVinculo_QuandoUsuarioJaEMembro()
+    {
+        var service = new InviteCodeService(_db);
+        var codigo = await NovoCodigoAsync();
+        await service.JoinAsync(codigo, userId: 42);
+
+        var result = await service.JoinAsync(codigo, userId: 42);
+
+        Assert.Equal(JoinStatus.AlreadyMember, result.Status);
+        Assert.Single(_db.WorkspaceMembers.Where(m => m.UserId == 42));
+    }
+
+    [Fact]
+    public async Task JoinAsync_NaoDeveRebaixarAdministrador_QuandoEleUsaOProprioCodigo()
+    {
+        // O administrador já participa: o reingresso cai em AlreadyMember e o
+        // papel dele continua intacto, sem virar membro comum.
+
+        var service = new InviteCodeService(_db);
+        _db.WorkspaceMembers.Add(new WorkspaceMember
+        {
+            WorkspaceId = _workspaceId,
+            UserId = 1,
+            Role = MemberRole.Admin,
+        });
+        await _db.SaveChangesAsync();
+        var codigo = await NovoCodigoAsync();
+
+        var result = await service.JoinAsync(codigo, userId: 1);
+
+        Assert.Equal(JoinStatus.AlreadyMember, result.Status);
+        var membro = Assert.Single(_db.WorkspaceMembers.Where(m => m.UserId == 1));
+        Assert.Equal(MemberRole.Admin, membro.Role);
+    }
 }
