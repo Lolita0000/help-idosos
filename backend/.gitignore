@@ -16,8 +16,6 @@ obj/
 *.tmp
 *.temp
 
-appsettings.json
-
 *.nupkg
 
 publish/
