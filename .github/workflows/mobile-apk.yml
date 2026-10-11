@@ -1,12 +1,12 @@
 name: Mobile — APK (Android)
 
 on:
-  workflow_dispatch:
+  # Entrega versionada: a tag dispara o build e dá nome à release.
+  #   git tag -a v0.1.0 -m "..."  &&  git push origin v0.1.0
   push:
-    branches: [main]
-    paths:
-      - "mobile/**"
-      - ".github/workflows/mobile-apk.yml"
+    tags: ["v*"]
+  # Build avulso, para conferir que o app compila sem publicar release.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -36,6 +36,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Definir a versão
+        id: versao
+        working-directory: .
+        run: |
+          # Numa tag, github.ref_name é "v0.1.0". Num build avulso é o nome da
+          # branch, e aí o APK fica marcado como "dev" e nenhuma release é criada.
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "valor=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "release=sim" >> "$GITHUB_OUTPUT"
+          else
+            echo "valor=dev-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+            echo "release=nao" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Avisar se o APK sairá em modo demonstração
+        if: vars.API_URL == ''
+        run: |
+          echo "::warning::A variável de repositório API_URL não está definida."
+          echo "::warning::O APK sairá em modo demonstração, com os dados no próprio aparelho, sem falar com a API."
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -64,26 +84,38 @@ jobs:
         working-directory: mobile/android
         run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
 
-      - name: Renomear APK
+      - name: Nomear o APK com a versão
         run: |
           mkdir -p ../out
-          cp android/app/build/outputs/apk/release/app-release.apk ../out/elo-de-cuidado-v0.1.apk
+          cp android/app/build/outputs/apk/release/app-release.apk \
+             "../out/elo-de-cuidado-${{ steps.versao.outputs.valor }}.apk"
           ls -la ../out
 
       - uses: actions/upload-artifact@v4
         with:
-          name: elo-de-cuidado-v0.1-apk
-          path: out/elo-de-cuidado-v0.1.apk
+          name: elo-de-cuidado-${{ steps.versao.outputs.valor }}-apk
+          path: out/elo-de-cuidado-${{ steps.versao.outputs.valor }}.apk
           retention-days: 30
 
-      - name: Publicar na release mobile-v0.1
+      - name: Publicar o APK na release da tag
+        if: steps.versao.outputs.release == 'sim'
         working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSAO: ${{ steps.versao.outputs.valor }}
         run: |
-          gh release view mobile-v0.1 >/dev/null 2>&1 || gh release create mobile-v0.1 \
-            --target "${GITHUB_SHA}" --prerelease \
-            --title "Elo de Cuidado — app Android v0.1 (Fundação e Acesso)" \
-            --notes "APK da entrega v0.1: HU-02 cadastrar, HU-13 autenticar, HU-01 criar workspace e HU-03 entrar por convite."
-          gh release upload mobile-v0.1 out/elo-de-cuidado-v0.1.apk --clobber
+          MODO="apontando para a API publicada"
+          if [ -z "${{ vars.API_URL }}" ]; then
+            MODO="em modo demonstração, com os dados no próprio aparelho"
+          fi
 
+          # A release pode já existir se a tag foi criada pela interface do GitHub.
+          gh release view "$VERSAO" >/dev/null 2>&1 || gh release create "$VERSAO" \
+            --title "Elo de Cuidado $VERSAO" \
+            --notes "Aplicativo Android da entrega $VERSAO, $MODO.
+
+          Baixe o arquivo \`elo-de-cuidado-$VERSAO.apk\` abaixo e instale no aparelho. É necessário permitir a instalação de fontes desconhecidas, porque o APK não vem de loja.
+
+          Os arquivos \`Source code\` são gerados automaticamente pelo GitHub e não precisam ser baixados."
+
+          gh release upload "$VERSAO" "out/elo-de-cuidado-$VERSAO.apk" --clobber
