@@ -1,15 +1,25 @@
-// Menu lateral (Figma: menu com usuário no rodapé) reduzido ao escopo da v0.1.
-import { router } from 'expo-router';
+// Menu lateral (Figma: nova entrada — menu com usuário no rodapé).
+// Relatórios e Configurações entram na v1.0.
+import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { Role } from '../core';
 import { initials } from '../core/format';
 import { useSession } from '../session';
 import { colors } from '../theme';
 import { Avatar, Dialog, Feather, Logo, T } from './ui';
 
-export function MenuButton() {
+export type MenuPage = 'dashboard' | 'diario' | 'membros' | 'convites' | 'workspaces';
+
+/** Workspace aberto: com ele, o menu mostra o "Menu principal" do workspace. */
+export interface MenuWorkspace {
+  id: string;
+  role?: Role;
+}
+
+export function MenuButton({ workspace, current = 'workspaces' }: { workspace?: MenuWorkspace; current?: MenuPage }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -22,16 +32,32 @@ export function MenuButton() {
       >
         <Feather name="menu" size={30} color={colors.text} />
       </Pressable>
-      <UserMenu visible={open} onClose={() => setOpen(false)} />
+      <UserMenu visible={open} onClose={() => setOpen(false)} workspace={workspace} current={current} />
     </>
   );
 }
 
-function UserMenu({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function UserMenu({
+  visible,
+  onClose,
+  workspace,
+  current,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  workspace?: MenuWorkspace;
+  current: MenuPage;
+}) {
   const { user, logout } = useSession();
   const insets = useSafeAreaInsets();
   const [confirm, setConfirm] = useState(false);
   if (!user) return null;
+
+  const go = (href: Href) => {
+    onClose();
+    router.navigate(href);
+  };
+  const id = workspace?.id ?? '';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
@@ -44,22 +70,19 @@ function UserMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
             </Pressable>
           </View>
           <View style={styles.sep} />
-          <T w="medium" size={14} color="rgba(255,255,255,0.8)" style={{ marginTop: 18, marginBottom: 6 }}>
-            Workspaces
-          </T>
-          <Pressable
-            style={styles.item}
-            accessibilityRole="button"
-            onPress={() => {
-              onClose();
-              router.navigate('/workspaces');
-            }}
-          >
-            <Feather name="grid" size={22} color={colors.white} />
-            <T w="medium" size={18} color={colors.white} style={{ marginLeft: 12 }}>
-              Meus Workspaces
-            </T>
-          </Pressable>
+          {workspace ? (
+            <>
+              <SectionLabel>Menu principal</SectionLabel>
+              <Item icon="grid" label="Dashboard" active={current === 'dashboard'} onPress={() => go({ pathname: '/workspace/[id]', params: { id } })} />
+              <Item icon="book" label="Diário de Cuidados" active={current === 'diario'} onPress={() => go({ pathname: '/workspace/[id]/diario', params: { id } })} />
+              <Item icon="users" label="Membros" active={current === 'membros'} onPress={() => go({ pathname: '/workspace/[id]/membros', params: { id } })} />
+              {workspace.role === 'admin' ? (
+                <Item icon="send" label="Convites" active={current === 'convites'} onPress={() => go({ pathname: '/workspace/[id]/convites', params: { id } })} />
+              ) : null}
+            </>
+          ) : null}
+          <SectionLabel>Workspaces</SectionLabel>
+          <Item icon="layers" label="Meus Workspaces" active={current === 'workspaces'} onPress={() => go('/workspaces')} />
 
           <View style={{ flex: 1 }} />
           <View style={styles.sep} />
@@ -101,6 +124,40 @@ function UserMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
   );
 }
 
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <T w="medium" size={14} color="rgba(255,255,255,0.8)" style={{ marginTop: 18, marginBottom: 6 }}>
+      {children}
+    </T>
+  );
+}
+
+function Item({
+  icon,
+  label,
+  active,
+  onPress,
+}: {
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={[styles.item, active && styles.itemActive]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+    >
+      <Feather name={icon} size={22} color={colors.white} />
+      <T w="medium" size={18} color={colors.white} style={{ marginLeft: 12 }}>
+        {label}
+      </T>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   menuBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginLeft: -6 },
   backdrop: { flex: 1, flexDirection: 'row', backgroundColor: colors.overlay },
@@ -121,8 +178,9 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: 10,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    marginBottom: 2,
   },
+  itemActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
   userRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20 },
   logout: {
     marginTop: 20,

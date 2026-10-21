@@ -20,6 +20,18 @@ export function longDateTime(iso: string): string {
   return `${longDate(iso)}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** "há cerca de 2 horas" — tempo relativo dos cards do diário. */
+export function relativeTime(iso: string, now = Date.now()): string {
+  const min = Math.floor((now - new Date(iso).getTime()) / 60_000);
+  if (min < 1) return 'agora mesmo';
+  if (min < 60) return `há ${plural(min, 'minuto', 'minutos')}`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há cerca de ${plural(h, 'hora', 'horas')}`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `há ${plural(d, 'dia', 'dias')}`;
+  return `em ${longDate(iso)}`;
+}
+
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';

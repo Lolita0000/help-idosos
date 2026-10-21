@@ -6,11 +6,17 @@ import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SessionProvider, useSession } from '../session';
 import { colors } from '../theme';
+
+// Sem isso a página web sai com lang="en" e o tradutor do navegador troca
+// textos em português (ex.: o botão "Registrar" virava "Secretário").
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  document.documentElement.lang = 'pt-BR';
+}
 
 function Root() {
   const { ready } = useSession();

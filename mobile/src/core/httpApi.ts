@@ -4,11 +4,18 @@
 //   GET  /api/workspaces · POST /api/workspaces · GET /api/workspaces/{id} · GET /api/workspaces/{id}/members
 //   GET  /api/invite-code?workspaceId= · POST /api/invite-code · DELETE /api/invite-code/{id}
 //   POST /api/invite-code/join
+// Diário (v0.2) — DiaryEntryController, branch feat/crud-entradas-diario:
+//   GET  /api/diary-entries?workspaceId= · POST /api/diary-entries · GET /api/diary-entries/{id}
+//   PATCH /api/diary-entries/{id} · DELETE /api/diary-entries/{id}
 
 import { ApiError, type ErrorCode } from './errors';
 import type {
   CreateWorkspaceInput,
+  DiaryCategory,
+  DiaryEntry,
+  DiaryEntryInput,
   EloApi,
+  Mood,
   InviteCode,
   Member,
   RegisterInput,
@@ -50,6 +57,44 @@ interface AuthDto {
   user: { id: number; name: string; email: string; createdAt: string };
 }
 
+/** DiaryEntryResponse do backend. */
+interface DiaryEntryDto {
+  id: number;
+  workspaceId: number;
+  authorId: number;
+  authorName: string;
+  title: string;
+  content: string;
+  /** medication · mood · symptom · appointment · note · other */
+  label: string;
+  /** Escala de 1 a 5; o backend só aceita na categoria "mood". */
+  moodLevel: number | null;
+  edited: boolean;
+  editedAt: string | null;
+  createdAt: string;
+}
+
+// Correspondência entre as categorias do Figma e as do backend (EntryLabel).
+// null = sem equivalente no backend; a escolha depende de decisão do grupo.
+const LABEL_BY_CATEGORY: Record<DiaryCategory, string | null> = {
+  medicamento: 'medication',
+  consulta: 'appointment',
+  sintoma: 'symptom',
+  observacao: 'note',
+  atividade: null,
+  alimentacao: null,
+};
+
+const CATEGORY_BY_LABEL: Record<string, DiaryCategory> = {
+  medication: 'medicamento',
+  appointment: 'consulta',
+  symptom: 'sintoma',
+  note: 'observacao',
+};
+
+// O Figma tem 4 humores; o backend guarda uma escala de 1 a 5 (mesma pontuação de MOODS em diary.ts).
+const MOOD_BY_LEVEL: Record<number, Mood> = { 5: 'otimo', 4: 'bom', 3: 'neutro', 1: 'ruim' };
+
 /** O backend grava datas em UTC sem o sufixo Z; sem ele o JS leria como hora local. */
 const utc = (d: string) => (/[zZ]|[+-]\d\d:?\d\d$/.test(d) ? d : `${d}Z`);
 
@@ -71,6 +116,45 @@ const toInvite = (i: InviteDto): InviteCode => ({
   createdAt: utc(i.createdAt),
   expiresAt: utc(i.expiresAt),
 });
+
+const toEntry = (e: DiaryEntryDto): DiaryEntry => ({
+  id: String(e.id),
+  workspaceId: String(e.workspaceId),
+  authorId: String(e.authorId),
+  authorName: e.authorName,
+  // PENDENTE (decisão do grupo): "mood" e "other" não existem no Figma; até lá aparecem como Observação.
+  category: CATEGORY_BY_LABEL[e.label.toLowerCase()] ?? 'observacao',
+  title: e.title,
+  description: e.content,
+  // PENDENTE (decisão do grupo): o nível 2 não tem humor equivalente no Figma.
+  mood: e.moodLevel === null ? null : (MOOD_BY_LEVEL[e.moodLevel] ?? null),
+  createdAt: utc(e.createdAt),
+  updatedAt: e.edited && e.editedAt ? utc(e.editedAt) : null,
+});
+
+/**
+ * Só os campos editáveis: autoria e horário nunca saem do cliente (RF05).
+ * Recusa antes do envio o que o backend ainda não representa, em vez de
+ * converter os dados por conta própria.
+ */
+function entryBody(i: DiaryEntryInput) {
+  const label = LABEL_BY_CATEGORY[i.category];
+  if (!label)
+    throw new ApiError('VALIDATION', 'Esta categoria ainda não é aceita pelo servidor. Escolha outra categoria.');
+  if (i.mood !== null)
+    throw new ApiError(
+      'VALIDATION',
+      'O servidor ainda não aceita humor nesta categoria. Desmarque o humor para registrar a entrada.',
+    );
+  return { title: i.title.trim(), content: i.description.trim(), label, moodLevel: null };
+}
+
+/** 403 com code NOT_AUTHOR: quem tentou não é o autor da entrada. */
+function notAuthor(e: unknown): never {
+  if (e instanceof ApiError && (e.code as string) === 'NOT_AUTHOR')
+    throw new ApiError('FORBIDDEN', 'Apenas quem registrou a entrada pode alterá-la ou removê-la.');
+  throw e;
+}
 
 function base64UrlDecode(input: string): string {
   const b64 = input.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(input.length / 4) * 4, '=');
@@ -254,6 +338,33 @@ export function createHttpApi(baseUrl: string): EloApi {
           throw new ApiError('ALREADY_MEMBER', 'Você já faz parte deste workspace.');
         throw e;
       }
+    },
+
+    async listEntries(token, workspaceId) {
+      const list = await call<DiaryEntryDto[]>(
+        'GET',
+        `/api/diary-entries?workspaceId=${encodeURIComponent(workspaceId)}`,
+        token,
+      );
+      return list.map(toEntry);
+    },
+
+    async getEntry(token, entryId) {
+      return toEntry(await call<DiaryEntryDto>('GET', `/api/diary-entries/${entryId}`, token));
+    },
+
+    async createEntry(token, workspaceId, input) {
+      const body = { workspaceId: Number(workspaceId), ...entryBody(input) };
+      return toEntry(await call<DiaryEntryDto>('POST', '/api/diary-entries', token, body));
+    },
+
+    async updateEntry(token, entryId, input) {
+      const body = entryBody(input);
+      return toEntry(await call<DiaryEntryDto>('PATCH', `/api/diary-entries/${entryId}`, token, body).catch(notAuthor));
+    },
+
+    async deleteEntry(token, entryId) {
+      await call<void>('DELETE', `/api/diary-entries/${entryId}`, token).catch(notAuthor);
     },
   };
 }

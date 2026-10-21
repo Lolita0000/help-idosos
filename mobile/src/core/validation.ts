@@ -60,6 +60,21 @@ export function validateWorkspace(name: string, subjectName: string): Record<str
   return e;
 }
 
+export const ENTRY_TITLE_MAX = 120;
+export const ENTRY_DESCRIPTION_MAX = 2000;
+
+/** HU-04: título, categoria e descrição são obrigatórios; o humor é opcional. */
+export function validateEntry(f: { title: string; category: string | null; description: string }): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!f.title.trim()) e.title = 'Informe um título para a entrada.';
+  else if (f.title.trim().length > ENTRY_TITLE_MAX) e.title = `O título pode ter até ${ENTRY_TITLE_MAX} caracteres.`;
+  if (!f.category) e.category = 'Escolha uma categoria.';
+  if (!f.description.trim()) e.description = 'Descreva o que aconteceu.';
+  else if (f.description.trim().length > ENTRY_DESCRIPTION_MAX)
+    e.description = `A descrição pode ter até ${ENTRY_DESCRIPTION_MAX} caracteres.`;
+  return e;
+}
+
 /** Normaliza o código digitado: aceita com ou sem hífen e em minúsculas. */
 export function normalizeCode(code: string): string {
   return code.toUpperCase().replace(/[^A-Z0-9]/g, '');
