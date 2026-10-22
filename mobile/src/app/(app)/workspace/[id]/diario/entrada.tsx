@@ -3,13 +3,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { Select } from '../../../../../../components/Select';
-import { Alert, BackLink, Button, Field, Screen, T } from '../../../../../../components/ui';
-import { api, ApiError, messageOf, type DiaryCategory } from '../../../../../../core';
-import { CATEGORIES } from '../../../../../../core/diary';
-import { ENTRY_DESCRIPTION_MAX, ENTRY_TITLE_MAX, validateEntry } from '../../../../../../core/validation';
-import { useSession } from '../../../../../../session';
-import { colors, radius } from '../../../../../../theme';
+import { Select } from '../../../../../components/Select';
+import { Alert, BackLink, Button, Field, Screen, T } from '../../../../../components/ui';
+import { api, ApiError, messageOf, type DiaryCategory } from '../../../../../core';
+import { CATEGORIES } from '../../../../../core/diary';
+import { ENTRY_DESCRIPTION_MAX, ENTRY_TITLE_MAX, validateEntry } from '../../../../../core/validation';
+import { useSession } from '../../../../../session';
+import { colors, radius } from '../../../../../theme';
 
 export default function Entrada() {
   const { id, entryId } = useLocalSearchParams<{ id: string; entryId?: string }>();
@@ -49,7 +49,7 @@ export default function Entrada() {
 
   const back = () => {
     if (router.canGoBack()) router.back();
-    else router.replace({ pathname: '/workspace/[id]/diario', params: { id } });
+    else router.replace({ pathname: '/workspace/[id]', params: { id } });
   };
 
   async function submit() {
@@ -73,7 +73,7 @@ export default function Entrada() {
   }
 
   return (
-    <Screen edges={['top']} contentStyle={styles.page}>
+    <Screen contentStyle={styles.page}>
       <BackLink onPress={back} />
       <T w="semibold" size={26} style={{ marginTop: 8 }} accessibilityRole="header">
         {editing ? 'Editar Entrada' : 'Nova Entrada'}

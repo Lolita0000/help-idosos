@@ -1,4 +1,4 @@
-// Ações de Editar/Excluir dos cards de entrada, compartilhadas por Dashboard e Diário.
+// Ações de Editar (HU-06) e Excluir (HU-07) dos cards de entrada do Diário.
 import { router } from 'expo-router';
 import { useState } from 'react';
 

@@ -1,5 +1,4 @@
-// Menu lateral (Figma: nova entrada — menu com usuário no rodapé).
-// Relatórios e Configurações entram na v1.0.
+// Menu lateral (Figma: menu com usuário no rodapé), com os itens que o MVP usa.
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
@@ -11,7 +10,7 @@ import { useSession } from '../session';
 import { colors } from '../theme';
 import { Avatar, Dialog, Feather, Logo, T } from './ui';
 
-export type MenuPage = 'dashboard' | 'diario' | 'membros' | 'convites' | 'workspaces';
+export type MenuPage = 'diario' | 'membros' | 'convites' | 'workspaces';
 
 /** Workspace aberto: com ele, o menu mostra o "Menu principal" do workspace. */
 export interface MenuWorkspace {
@@ -73,8 +72,7 @@ function UserMenu({
           {workspace ? (
             <>
               <SectionLabel>Menu principal</SectionLabel>
-              <Item icon="grid" label="Dashboard" active={current === 'dashboard'} onPress={() => go({ pathname: '/workspace/[id]', params: { id } })} />
-              <Item icon="book" label="Diário de Cuidados" active={current === 'diario'} onPress={() => go({ pathname: '/workspace/[id]/diario', params: { id } })} />
+              <Item icon="book" label="Diário de Cuidados" active={current === 'diario'} onPress={() => go({ pathname: '/workspace/[id]', params: { id } })} />
               <Item icon="users" label="Membros" active={current === 'membros'} onPress={() => go({ pathname: '/workspace/[id]/membros', params: { id } })} />
               {workspace.role === 'admin' ? (
                 <Item icon="send" label="Convites" active={current === 'convites'} onPress={() => go({ pathname: '/workspace/[id]/convites', params: { id } })} />

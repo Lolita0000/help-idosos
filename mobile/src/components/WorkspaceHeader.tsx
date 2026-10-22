@@ -7,7 +7,7 @@ import { Feather, T } from './ui';
 
 /**
  * Cabeçalho das telas de gestão do workspace (Membros e, para o administrador, Convites).
- * Dashboard e Diário ficam nas abas inferiores; a seta volta para o Dashboard.
+ * A seta volta para o Diário, que é a tela inicial do workspace.
  */
 export function WorkspaceHeader({
   id,
@@ -26,7 +26,7 @@ export function WorkspaceHeader({
         <Pressable
           onPress={() => router.navigate({ pathname: '/workspace/[id]', params: { id } })}
           accessibilityRole="button"
-          accessibilityLabel="Voltar para o Dashboard"
+          accessibilityLabel="Voltar para o Diário"
           style={styles.back}
           hitSlop={6}
         >

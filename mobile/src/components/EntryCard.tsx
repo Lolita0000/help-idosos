@@ -1,4 +1,4 @@
-// Card de entrada do diário (Figma: diario / dashboard — com o menu ⋮ de Editar e Excluir).
+// Card de entrada do diário (Figma: diario — com o menu ⋮ de Editar e Excluir).
 import { useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 

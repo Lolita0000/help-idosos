@@ -1,17 +1,17 @@
-// Figma: diario — lista das entradas com busca, filtro por categoria e ações de editar/excluir (HU-06, HU-07).
+// Diário do workspace (abre direto em /workspace/[id]): entradas com filtro por categoria e ações de editar/excluir (HU-04, HU-06, HU-07).
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, TextInput, View } from 'react-native';
 
-import { AppHeader } from '../../../../../../components/AppHeader';
-import { EntryCard } from '../../../../../../components/EntryCard';
-import { Select } from '../../../../../../components/Select';
-import { Alert, Button, Feather, Screen, T } from '../../../../../../components/ui';
-import { useEntryActions } from '../../../../../../components/useEntryActions';
-import { api, type DiaryCategory } from '../../../../../../core';
-import { CATEGORIES } from '../../../../../../core/diary';
-import { useLoad } from '../../../../../../hooks';
-import { colors, fonts } from '../../../../../../theme';
+import { AppHeader } from '../../../../components/AppHeader';
+import { EntryCard } from '../../../../components/EntryCard';
+import { Select } from '../../../../components/Select';
+import { Alert, Button, Feather, Screen, T } from '../../../../components/ui';
+import { useEntryActions } from '../../../../components/useEntryActions';
+import { api, type DiaryCategory } from '../../../../core';
+import { CATEGORIES } from '../../../../core/diary';
+import { useLoad } from '../../../../hooks';
+import { colors, fonts } from '../../../../theme';
 
 type Filter = DiaryCategory | 'todas';
 const FILTERS = [{ value: 'todas' as Filter, label: 'Todas as categorias' }, ...CATEGORIES];
@@ -39,7 +39,7 @@ export default function Diario() {
   const newEntry = () => router.push({ pathname: '/workspace/[id]/diario/entrada', params: { id } });
 
   return (
-    <Screen edges={['top']} contentStyle={{ paddingBottom: 24 }}>
+    <Screen contentStyle={{ paddingBottom: 24 }}>
       <AppHeader workspace={{ id, role: data?.ws.role }} current="diario" />
       <View style={styles.intro}>
         <T w="semibold" size={26} accessibilityRole="header">
