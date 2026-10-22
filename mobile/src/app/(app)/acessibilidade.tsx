@@ -12,7 +12,7 @@ export default function Acessibilidade() {
 
   return (
     <Screen contentStyle={styles.page}>
-      <BackLink onPress={() => (router.canGoBack() ? router.back() : router.replace('/workspaces'))} />
+      <BackLink onPress={() => (router.canGoBack() ? router.back() : router.replace('/conta'))} />
       <T w="semibold" size={26} style={{ marginTop: 8 }} accessibilityRole="header">
         Acessibilidade
       </T>

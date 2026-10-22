@@ -425,6 +425,8 @@ export function Dialog({
   onCancel,
   onConfirm,
   danger,
+  confirmDisabled,
+  loading,
   children,
 }: {
   visible: boolean;
@@ -436,6 +438,9 @@ export function Dialog({
   onCancel: () => void;
   onConfirm?: () => void;
   danger?: boolean;
+  /** Desabilita a confirmação até a pessoa cumprir o que o diálogo pede. */
+  confirmDisabled?: boolean;
+  loading?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -457,7 +462,7 @@ export function Dialog({
           <View style={[styles.row, { marginTop: 20, gap: 12 }]}>
             <Button title={cancel} variant="outline" onPress={onCancel} style={{ flex: 1 }} small />
             {confirm ? (
-              <Button title={confirm} variant={danger ? 'danger' : 'primary'} onPress={onConfirm} style={{ flex: 1 }} small />
+              <Button title={confirm} variant={danger ? 'danger' : 'primary'} onPress={onConfirm} disabled={confirmDisabled} loading={loading} style={{ flex: 1 }} small />
             ) : null}
           </View>
         </View>
