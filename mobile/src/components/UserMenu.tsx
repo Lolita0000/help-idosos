@@ -81,6 +81,8 @@ function UserMenu({
           ) : null}
           <SectionLabel>Workspaces</SectionLabel>
           <Item icon="layers" label="Meus Workspaces" active={current === 'workspaces'} onPress={() => go('/workspaces')} />
+          <SectionLabel>Conta</SectionLabel>
+          <Item icon="type" label="Acessibilidade" active={false} onPress={() => go('/acessibilidade')} />
 
           <View style={{ flex: 1 }} />
           <View style={styles.sep} />

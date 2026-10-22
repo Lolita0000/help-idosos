@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useFontScale } from '../fontScale';
 import { colors, fonts, radius, TOUCH } from '../theme';
 
 /* ---------- Texto ---------- */
@@ -32,11 +33,19 @@ export function T({
   style,
   ...rest
 }: TextProps & { w?: Weight; size?: number; color?: string; style?: StyleProp<TextStyle> }) {
+  // RNF-004: todo texto do app passa por aqui e segue o tamanho de fonte escolhido.
+  const { scale } = useFontScale();
+  const fontSize = Math.round(size * scale);
+  const custom = StyleSheet.flatten(style);
   return (
     <Text
       maxFontSizeMultiplier={1.6}
       {...rest}
-      style={[{ fontFamily: fonts[w], fontSize: size, color, lineHeight: Math.round(size * 1.35) }, style]}
+      style={[
+        { fontFamily: fonts[w], fontSize, color, lineHeight: Math.round(fontSize * 1.35) },
+        style,
+        custom?.lineHeight ? { lineHeight: Math.round(custom.lineHeight * scale) } : null,
+      ]}
     />
   );
 }
@@ -250,6 +259,7 @@ export function Field({
 }) {
   const [hidden, setHidden] = useState(true);
   const [focused, setFocused] = useState(false);
+  const { scale } = useFontScale();
   const borderColor = error ? colors.danger : focused ? colors.primary : '#9CA3AF';
   return (
     <View style={{ marginBottom: 14 }}>
@@ -277,6 +287,7 @@ export function Field({
           onBlur={() => setFocused(false)}
           style={[
             styles.input,
+            { fontSize: Math.round(16 * scale) },
             multiline && { textAlignVertical: 'top', paddingTop: 12, minHeight: 96 },
             center && { textAlign: 'center', letterSpacing: 2 },
             Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null,
