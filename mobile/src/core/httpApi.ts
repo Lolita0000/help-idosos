@@ -15,7 +15,6 @@ import type {
   DiaryEntry,
   DiaryEntryInput,
   EloApi,
-  Mood,
   InviteCode,
   Member,
   RegisterInput,
@@ -67,33 +66,24 @@ interface DiaryEntryDto {
   content: string;
   /** medication · mood · symptom · appointment · note · other */
   label: string;
-  /** Escala de 1 a 5; o backend só aceita na categoria "mood". */
-  moodLevel: number | null;
   edited: boolean;
   editedAt: string | null;
   createdAt: string;
 }
 
-// Correspondência entre as categorias do Figma e as do backend (EntryLabel).
-// null = sem equivalente no backend; a escolha depende de decisão do grupo.
-const LABEL_BY_CATEGORY: Record<DiaryCategory, string | null> = {
+/** Categoria do app → EntryLabel do backend, de 1 para 1. */
+const LABEL_BY_CATEGORY: Record<DiaryCategory, string> = {
   medicamento: 'medication',
-  consulta: 'appointment',
+  humor: 'mood',
   sintoma: 'symptom',
+  consulta: 'appointment',
   observacao: 'note',
-  atividade: null,
-  alimentacao: null,
+  outro: 'other',
 };
 
-const CATEGORY_BY_LABEL: Record<string, DiaryCategory> = {
-  medication: 'medicamento',
-  appointment: 'consulta',
-  symptom: 'sintoma',
-  note: 'observacao',
-};
-
-// O Figma tem 4 humores; o backend guarda uma escala de 1 a 5 (mesma pontuação de MOODS em diary.ts).
-const MOOD_BY_LEVEL: Record<number, Mood> = { 5: 'otimo', 4: 'bom', 3: 'neutro', 1: 'ruim' };
+const CATEGORY_BY_LABEL: Record<string, DiaryCategory> = Object.fromEntries(
+  Object.entries(LABEL_BY_CATEGORY).map(([category, label]) => [label, category as DiaryCategory]),
+);
 
 /** O backend grava datas em UTC sem o sufixo Z; sem ele o JS leria como hora local. */
 const utc = (d: string) => (/[zZ]|[+-]\d\d:?\d\d$/.test(d) ? d : `${d}Z`);
@@ -122,32 +112,23 @@ const toEntry = (e: DiaryEntryDto): DiaryEntry => ({
   workspaceId: String(e.workspaceId),
   authorId: String(e.authorId),
   authorName: e.authorName,
-  // PENDENTE (decisão do grupo): "mood" e "other" não existem no Figma; até lá aparecem como Observação.
-  category: CATEGORY_BY_LABEL[e.label.toLowerCase()] ?? 'observacao',
+  category: CATEGORY_BY_LABEL[e.label.toLowerCase()] ?? 'outro',
   title: e.title,
   description: e.content,
-  // PENDENTE (decisão do grupo): o nível 2 não tem humor equivalente no Figma.
-  mood: e.moodLevel === null ? null : (MOOD_BY_LEVEL[e.moodLevel] ?? null),
   createdAt: utc(e.createdAt),
   updatedAt: e.edited && e.editedAt ? utc(e.editedAt) : null,
 });
 
 /**
  * Só os campos editáveis: autoria e horário nunca saem do cliente (RF05).
- * Recusa antes do envio o que o backend ainda não representa, em vez de
- * converter os dados por conta própria.
+ * moodLevel vai sempre nulo: o app não registra escala de humor.
  */
-function entryBody(i: DiaryEntryInput) {
-  const label = LABEL_BY_CATEGORY[i.category];
-  if (!label)
-    throw new ApiError('VALIDATION', 'Esta categoria ainda não é aceita pelo servidor. Escolha outra categoria.');
-  if (i.mood !== null)
-    throw new ApiError(
-      'VALIDATION',
-      'O servidor ainda não aceita humor nesta categoria. Desmarque o humor para registrar a entrada.',
-    );
-  return { title: i.title.trim(), content: i.description.trim(), label, moodLevel: null };
-}
+const entryBody = (i: DiaryEntryInput) => ({
+  title: i.title.trim(),
+  content: i.description.trim(),
+  label: LABEL_BY_CATEGORY[i.category],
+  moodLevel: null,
+});
 
 /** 403 com code NOT_AUTHOR: quem tentou não é o autor da entrada. */
 function notAuthor(e: unknown): never {

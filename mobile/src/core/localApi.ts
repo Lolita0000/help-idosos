@@ -418,7 +418,6 @@ export const localApi: EloApi = {
       category: input.category,
       title: input.title.trim(),
       description: input.description.trim(),
-      mood: input.mood,
     };
     db.entries.push(entry);
     await save(db);
@@ -439,7 +438,6 @@ export const localApi: EloApi = {
       category: input.category,
       title: input.title.trim(),
       description: input.description.trim(),
-      mood: input.mood,
       updatedAt: ts,
     });
     db.audit.push({ id: uuid(), userId: user.id, action: 'ENTRY_UPDATED', entity: 'DiaryEntry', entityId: entry.id, workspaceId: entry.workspaceId, at: ts });

@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import type { DiaryEntry } from '../core';
-import { categoryOf, moodOf } from '../core/diary';
+import { categoryOf } from '../core/diary';
 import { initials, relativeTime } from '../core/format';
 import { colors, radius, TOUCH } from '../theme';
 import { Avatar, Feather, T } from './ui';
@@ -34,7 +34,6 @@ export function EntryCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const mood = moodOf(entry.mood);
   return (
     <View style={styles.card}>
       <View style={styles.head}>
@@ -61,11 +60,6 @@ export function EntryCard({
       <T size={15} color="#4B5563" style={{ marginTop: 6 }}>
         {entry.description}
       </T>
-      {mood ? (
-        <T size={15} color="#4B5563" style={{ marginTop: 10 }} accessibilityLabel={`Humor: ${mood.label}`}>
-          Humor: {mood.emoji}
-        </T>
-      ) : null}
     </View>
   );
 }

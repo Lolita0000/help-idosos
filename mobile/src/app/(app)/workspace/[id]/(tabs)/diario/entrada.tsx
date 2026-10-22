@@ -1,15 +1,15 @@
 // Figma: nova entrada — registrar (HU-04) e, com ?entryId=, editar a própria entrada (HU-06).
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Select } from '../../../../../../components/Select';
 import { Alert, BackLink, Button, Field, Screen, T } from '../../../../../../components/ui';
-import { api, ApiError, messageOf, type DiaryCategory, type Mood } from '../../../../../../core';
-import { CATEGORIES, MOODS } from '../../../../../../core/diary';
+import { api, ApiError, messageOf, type DiaryCategory } from '../../../../../../core';
+import { CATEGORIES } from '../../../../../../core/diary';
 import { ENTRY_DESCRIPTION_MAX, ENTRY_TITLE_MAX, validateEntry } from '../../../../../../core/validation';
 import { useSession } from '../../../../../../session';
-import { colors, radius, TOUCH } from '../../../../../../theme';
+import { colors, radius } from '../../../../../../theme';
 
 export default function Entrada() {
   const { id, entryId } = useLocalSearchParams<{ id: string; entryId?: string }>();
@@ -18,7 +18,6 @@ export default function Entrada() {
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<DiaryCategory | null>(null);
-  const [mood, setMood] = useState<Mood | null>(null);
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
@@ -32,7 +31,6 @@ export default function Entrada() {
       .then((e) => {
         setTitle(e.title);
         setCategory(e.category);
-        setMood(e.mood);
         setDescription(e.description);
       })
       .catch((e) => {
@@ -61,7 +59,7 @@ export default function Entrada() {
     if (Object.keys(fields).length || !token || !category) return;
     setSaving(true);
     try {
-      const input = { title, category, description, mood };
+      const input = { title, category, description };
       if (editing) await api.updateEntry(token, entryId, input);
       else await api.createEntry(token, id, input);
       back();
@@ -105,31 +103,6 @@ export default function Entrada() {
             placeholder="Selecione a categoria"
             error={errors.category}
           />
-
-          <T w="medium" size={16} style={{ marginBottom: 8 }}>
-            Como está o humor?
-          </T>
-          <View style={styles.moods} accessibilityRole="radiogroup">
-            {MOODS.map((m) => {
-              const active = mood === m.value;
-              return (
-                <Pressable
-                  key={m.value}
-                  onPress={() => setMood(active ? null : m.value)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: active }}
-                  accessibilityLabel={`Humor ${m.label}`}
-                  style={[styles.mood, active && styles.moodActive]}
-                >
-                  <T size={24}>{m.emoji}</T>
-                  <T size={14} style={{ marginTop: 4 }}>
-                    {m.label}
-                  </T>
-                </Pressable>
-              );
-            })}
-          </View>
-
           <Field
             label="Descrição"
             value={description}
@@ -165,17 +138,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: 16,
   },
-  moods: { flexDirection: 'row', gap: 8, marginBottom: 18 },
-  mood: {
-    flex: 1,
-    minHeight: TOUCH + 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#9CA3AF',
-    borderRadius: radius.sm,
-    paddingVertical: 8,
-  },
-  moodActive: { backgroundColor: '#A9C1F2', borderColor: colors.primary },
   actions: { flexDirection: 'row', gap: 12, marginTop: 6 },
 });

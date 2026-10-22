@@ -107,13 +107,7 @@ function Body({
       <View style={styles.grid}>
         <Stat label="Total de Registros" icon="book-open" value={String(stats.total)} hint="Desde o início" />
         <Stat label="Esta semana" icon="calendar" value={String(stats.thisWeek)} hint="Registros nos últimos 7 dias" />
-        <Stat label="Membros ativos" icon="users" value={String(ws.members.length)} hint="Participando do cuidado" />
-        <Stat
-          label="Humor médio"
-          icon="trending-up"
-          value={stats.averageMood === null ? '—' : stats.averageMood.toFixed(1).replace('.', ',')}
-          hint="Nos últimos 7 dias"
-        />
+        <Stat label="Membros ativos" icon="users" value={String(ws.members.length)} hint="Participando do cuidado" wide />
       </View>
 
       <Panel
@@ -178,9 +172,22 @@ function Body({
   );
 }
 
-function Stat({ label, icon, value, hint }: { label: string; icon: keyof typeof Feather.glyphMap; value: string; hint: string }) {
+function Stat({
+  label,
+  icon,
+  value,
+  hint,
+  wide,
+}: {
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  value: string;
+  hint: string;
+  /** Ocupa a linha inteira da grade. */
+  wide?: boolean;
+}) {
   return (
-    <View style={styles.stat} accessible accessibilityLabel={`${label}: ${value}. ${hint}`}>
+    <View style={[styles.stat, wide && { width: '100%' }]} accessible accessibilityLabel={`${label}: ${value}. ${hint}`}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
         <T size={14} style={{ flex: 1 }}>
           {label}

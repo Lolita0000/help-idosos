@@ -63,9 +63,8 @@ export interface CreateWorkspaceInput {
   description?: string;
 }
 
-export type DiaryCategory = 'medicamento' | 'consulta' | 'sintoma' | 'atividade' | 'alimentacao' | 'observacao';
-
-export type Mood = 'otimo' | 'bom' | 'neutro' | 'ruim';
+/** Categorias do RF05, uma para cada valor do EntryLabel do backend. */
+export type DiaryCategory = 'medicamento' | 'humor' | 'sintoma' | 'consulta' | 'observacao' | 'outro';
 
 export interface DiaryEntry {
   id: string;
@@ -76,7 +75,6 @@ export interface DiaryEntry {
   category: DiaryCategory;
   title: string;
   description: string;
-  mood: Mood | null;
   createdAt: string;
   /** Preenchido quando a entrada foi editada (RN-008). */
   updatedAt: string | null;
@@ -86,7 +84,6 @@ export interface DiaryEntryInput {
   category: DiaryCategory;
   title: string;
   description: string;
-  mood: Mood | null;
 }
 
 /** Contrato único consumido pelas telas, independente de onde os dados vivem. */

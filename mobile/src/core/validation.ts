@@ -63,7 +63,7 @@ export function validateWorkspace(name: string, subjectName: string): Record<str
 export const ENTRY_TITLE_MAX = 120;
 export const ENTRY_DESCRIPTION_MAX = 2000;
 
-/** HU-04: título, categoria e descrição são obrigatórios; o humor é opcional. */
+/** HU-04 (RF05): título, categoria e descrição são obrigatórios. */
 export function validateEntry(f: { title: string; category: string | null; description: string }): Record<string, string> {
   const e: Record<string, string> = {};
   if (!f.title.trim()) e.title = 'Informe um título para a entrada.';
