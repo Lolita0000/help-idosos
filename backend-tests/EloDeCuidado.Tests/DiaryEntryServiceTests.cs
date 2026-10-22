@@ -1,3 +1,4 @@
+using System.Text.Json;
 using EloDeCuidado.Data;
 using EloDeCuidado.DTOs.DiaryEntries;
 using EloDeCuidado.Models;
@@ -77,6 +78,68 @@ public class DiaryEntryServiceTests : IAsyncLifetime
         Assert.Equal("medication", result.Entry.Label);
         Assert.False(result.Entry.Edited);
         Assert.Null(result.Entry.EditedAt);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DeveIgnorarAutoriaEHorarioForjadosPeloCliente()
+    {
+        // RF05: a autoria e o horário são atribuídos pelo servidor, não informados
+        // pelo cliente. Aqui o corpo chega como chegaria pela API, com authorId e
+        // createdAt forjados, e o resultado prova que nenhum dos dois sobreviveu.
+        //
+        // Sem isso, qualquer pessoa registraria observação de saúde em nome de
+        // outra, e como a autoria decide quem pode editar (RN-008), também
+        // conseguiria travar a edição para o autor verdadeiro.
+
+        var corpoForjado = $$"""
+        {
+          "workspaceId": {{_workspaceId}},
+          "title": "Entrada forjada",
+          "content": "Tentativa de atribuir a outro autor.",
+          "label": "note",
+          "authorId": {{_outroMembroId}},
+          "createdAt": "2020-01-01T00:00:00Z"
+        }
+        """;
+
+        // JsonSerializerDefaults.Web reproduz a desserialização do ASP.NET Core.
+        var request = JsonSerializer.Deserialize<CreateDiaryEntryRequest>(
+            corpoForjado, new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+
+        var antes = DateTime.UtcNow;
+        var result = await Servico().CreateAsync(request, _autorId);
+
+        Assert.Equal(DiaryEntryStatus.Ok, result.Status);
+
+        // A autoria é de quem está autenticado, não do id enviado no corpo.
+        Assert.Equal(_autorId, result.Entry!.AuthorId);
+        Assert.NotEqual(_outroMembroId, result.Entry.AuthorId);
+
+        // O horário é o do servidor, não o de 2020 enviado pelo cliente.
+        Assert.InRange(result.Entry.CreatedAt, antes.AddSeconds(-5), DateTime.UtcNow.AddSeconds(5));
+        Assert.NotEqual(2020, result.Entry.CreatedAt.Year);
+
+        // Confirma no banco, e não apenas no DTO devolvido.
+        var gravada = await _db.DiaryEntries.AsNoTracking().FirstAsync(e => e.Id == result.Entry.Id);
+        Assert.Equal(_autorId, gravada.AuthorId);
+        Assert.NotEqual(2020, gravada.CreatedAt.Year);
+    }
+
+    [Fact]
+    public void CreateDiaryEntryRequest_NaoDeveTerCampoDeAutoriaNemDeHorario()
+    {
+        // A proteção acima não depende de validação em tempo de execução: o
+        // contrato simplesmente não tem onde guardar autoria ou horário. Este
+        // teste falha se alguém acrescentar esses campos ao DTO no futuro.
+
+        var campos = typeof(CreateDiaryEntryRequest)
+            .GetProperties()
+            .Select(p => p.Name)
+            .ToArray();
+
+        Assert.DoesNotContain("AuthorId", campos);
+        Assert.DoesNotContain("CreatedAt", campos);
+        Assert.DoesNotContain("Author", campos);
     }
 
     [Fact]
