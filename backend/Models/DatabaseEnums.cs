@@ -8,7 +8,10 @@ public enum EntryLabel
     /// <summary>Medicamento administrado ou prescrito.</summary>
     Medication,
 
-    /// <summary>Estado de humor. Nesta categoria a entrada aceita uma escala de 1 a 5.</summary>
+    /// <summary>
+    /// Estado de humor. Nesta categoria a entrada aceita uma escala opcional de
+    /// 1 a 5; sem ela, vale como registro de humor sem nota atribuída.
+    /// </summary>
     Mood,
 
     /// <summary>Sintoma observado.</summary>

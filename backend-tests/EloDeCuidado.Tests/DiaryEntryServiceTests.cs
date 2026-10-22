@@ -217,13 +217,38 @@ public class DiaryEntryServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CreateAsync_DeveRecusar_QuandoMoodSemEscala()
+    public async Task CreateAsync_DeveAceitarMoodSemEscala()
     {
+        // A escala é opcional: humor é categoria de registro, não medição
+        // obrigatória. A tela do diário (#86) oferece a categoria Humor sem
+        // pedir nota, e exigir a escala a deixaria inutilizável no aplicativo.
+
         var service = Servico();
 
         var result = await service.CreateAsync(Nova(categoria: "mood"), _autorId);
 
-        Assert.Equal(DiaryEntryStatus.Invalid, result.Status);
+        Assert.Equal(DiaryEntryStatus.Ok, result.Status);
+        Assert.Equal("mood", result.Entry!.Label);
+        Assert.Null(result.Entry.MoodLevel);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DeveAceitarMoodSemEscala()
+    {
+        // O mesmo vale ao editar: o aplicativo envia categoria, título e
+        // descrição juntos, sempre com a escala nula.
+
+        var service = Servico();
+        var criada = await service.CreateAsync(Nova(), _autorId);
+
+        var result = await service.UpdateAsync(
+            criada.Entry!.Id,
+            new UpdateDiaryEntryRequest("Humor hoje", null, "mood", null),
+            _autorId);
+
+        Assert.Equal(DiaryEntryStatus.Ok, result.Status);
+        Assert.Equal("mood", result.Entry!.Label);
+        Assert.Null(result.Entry.MoodLevel);
     }
 
     [Theory]

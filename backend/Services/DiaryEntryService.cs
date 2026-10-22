@@ -183,10 +183,15 @@ public sealed class DiaryEntryService(AppDbContext db) : IDiaryEntryService
         Enum.TryParse(label, ignoreCase: true, out parsed) && Enum.IsDefined(parsed);
 
     /// <summary>
-    /// A escala de humor só existe na categoria Mood. Informá-la em outra
-    /// categoria é recusado, em vez de ignorado em silêncio: o cliente estaria
-    /// enviando um dado que nunca seria exibido de volta.
+    /// A escala de humor é opcional e só existe na categoria Mood.
     /// </summary>
+    /// <remarks>
+    /// Na categoria Mood a escala pode vir nula: humor é uma categoria de
+    /// registro, não uma medição obrigatória, e a tela do diário registra humor
+    /// sem pedir nota. Informá-la fora dessa categoria continua sendo recusado,
+    /// em vez de ignorado em silêncio, porque aí o cliente estaria enviando um
+    /// dado que nunca seria exibido de volta.
+    /// </remarks>
     private static bool TryNormalizeMood(
         EntryLabel label, int? informed, out int? mood, out string? error)
     {
@@ -205,10 +210,7 @@ public sealed class DiaryEntryService(AppDbContext db) : IDiaryEntryService
         }
 
         if (informed is null)
-        {
-            error = "Informe a escala de humor, de 1 a 5.";
-            return false;
-        }
+            return true;
 
         if (informed is < 1 or > 5)
         {
