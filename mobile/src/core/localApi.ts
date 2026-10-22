@@ -11,6 +11,8 @@ import { ApiError } from './errors';
 import { dataStore } from './storage';
 import type {
   CreateWorkspaceInput,
+  DiaryEntry,
+  DiaryEntryInput,
   EloApi,
   InviteCode,
   Member,
@@ -21,7 +23,7 @@ import type {
   WorkspaceDetail,
   WorkspaceSummary,
 } from './types';
-import { isValidEmail, normalizeCode, passwordError, validateWorkspace } from './validation';
+import { isValidEmail, normalizeCode, passwordError, validateEntry, validateWorkspace } from './validation';
 
 bcrypt.setRandomFallback((len: number) => Array.from(Crypto.getRandomBytes(len)));
 
@@ -50,6 +52,17 @@ interface MemberRow {
   role: Role;
   joinedAt: string;
 }
+type EntryRow = Omit<DiaryEntry, 'authorName'>;
+/** RNF-006: registro de ação sensível, sem guardar o conteúdo da entrada. */
+interface AuditRow {
+  id: string;
+  userId: string;
+  action: 'ENTRY_UPDATED' | 'ENTRY_DELETED';
+  entity: 'DiaryEntry';
+  entityId: string;
+  workspaceId: string;
+  at: string;
+}
 interface Db {
   users: UserRow[];
   workspaces: WorkspaceRow[];
@@ -57,6 +70,8 @@ interface Db {
   invites: InviteCode[];
   sessions: { token: string; userId: string; expiresAt: string }[];
   attempts: Record<string, { count: number; lockedUntil: string | null }>;
+  entries: EntryRow[];
+  audit: AuditRow[];
 }
 
 const emptyDb = (): Db => ({
@@ -66,6 +81,8 @@ const emptyDb = (): Db => ({
   invites: [],
   sessions: [],
   attempts: {},
+  entries: [],
+  audit: [],
 });
 
 async function load(): Promise<Db> {
@@ -132,6 +149,21 @@ function summary(db: Db, ws: WorkspaceRow, role: Role): WorkspaceSummary {
     createdAt: ws.createdAt,
     role,
   };
+}
+
+function toEntry(db: Db, e: EntryRow): DiaryEntry {
+  return { ...e, authorName: db.users.find((u) => u.id === e.authorId)?.name ?? 'Usuário removido' };
+}
+
+function findEntry(db: Db, entryId: string): EntryRow {
+  const e = db.entries.find((x) => x.id === entryId);
+  if (!e) throw new ApiError('NOT_FOUND', 'Entrada não encontrada. Ela pode ter sido excluída.');
+  return e;
+}
+
+function checkEntry(input: DiaryEntryInput) {
+  const fields = validateEntry(input);
+  if (Object.keys(fields).length) throw new ApiError('VALIDATION', 'Revise os campos.', fields);
 }
 
 export const localApi: EloApi = {
@@ -350,5 +382,79 @@ export const localApi: EloApi = {
     db.members.push({ workspaceId: ws.id, userId: user.id, role: 'member', joinedAt: now() });
     await save(db);
     return summary(db, ws, 'member');
+  },
+
+  async listEntries(token, workspaceId) {
+    const db = await load();
+    const user = requireUser(db, token);
+    requireMember(db, user.id, workspaceId);
+    return db.entries
+      .filter((e) => e.workspaceId === workspaceId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((e) => toEntry(db, e));
+  },
+
+  async getEntry(token, entryId) {
+    const db = await load();
+    const user = requireUser(db, token);
+    const entry = findEntry(db, entryId);
+    requireMember(db, user.id, entry.workspaceId);
+    return toEntry(db, entry);
+  },
+
+  // HU-04
+  async createEntry(token, workspaceId, input) {
+    checkEntry(input);
+    const db = await load();
+    const user = requireUser(db, token);
+    requireMember(db, user.id, workspaceId);
+    const entry: EntryRow = {
+      id: uuid(),
+      workspaceId,
+      // Autoria e horário vêm da sessão e do relógio de quem grava, não do formulário.
+      authorId: user.id,
+      createdAt: now(),
+      updatedAt: null,
+      category: input.category,
+      title: input.title.trim(),
+      description: input.description.trim(),
+    };
+    db.entries.push(entry);
+    await save(db);
+    return toEntry(db, entry);
+  },
+
+  // HU-06: só o autor edita (RN-008).
+  async updateEntry(token, entryId, input) {
+    checkEntry(input);
+    const db = await load();
+    const user = requireUser(db, token);
+    const entry = findEntry(db, entryId);
+    requireMember(db, user.id, entry.workspaceId);
+    if (entry.authorId !== user.id)
+      throw new ApiError('FORBIDDEN', 'Apenas quem escreveu a entrada pode editá-la.');
+    const ts = now();
+    Object.assign(entry, {
+      category: input.category,
+      title: input.title.trim(),
+      description: input.description.trim(),
+      updatedAt: ts,
+    });
+    db.audit.push({ id: uuid(), userId: user.id, action: 'ENTRY_UPDATED', entity: 'DiaryEntry', entityId: entry.id, workspaceId: entry.workspaceId, at: ts });
+    await save(db);
+    return toEntry(db, entry);
+  },
+
+  // HU-07: autor ou administrador excluem em definitivo (RN-006, RN-007).
+  async deleteEntry(token, entryId) {
+    const db = await load();
+    const user = requireUser(db, token);
+    const entry = findEntry(db, entryId);
+    const me = requireMember(db, user.id, entry.workspaceId);
+    if (entry.authorId !== user.id && me.role !== 'admin')
+      throw new ApiError('FORBIDDEN', 'Apenas o autor ou o administrador podem excluir esta entrada.');
+    db.entries = db.entries.filter((e) => e.id !== entryId);
+    db.audit.push({ id: uuid(), userId: user.id, action: 'ENTRY_DELETED', entity: 'DiaryEntry', entityId: entryId, workspaceId: entry.workspaceId, at: now() });
+    await save(db);
   },
 };

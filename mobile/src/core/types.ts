@@ -63,6 +63,29 @@ export interface CreateWorkspaceInput {
   description?: string;
 }
 
+/** Categorias do RF05, uma para cada valor do EntryLabel do backend. */
+export type DiaryCategory = 'medicamento' | 'humor' | 'sintoma' | 'consulta' | 'observacao' | 'outro';
+
+export interface DiaryEntry {
+  id: string;
+  workspaceId: string;
+  /** Autoria e horário são definidos pelo servidor, nunca pelo cliente (RF05). */
+  authorId: string;
+  authorName: string;
+  category: DiaryCategory;
+  title: string;
+  description: string;
+  createdAt: string;
+  /** Preenchido quando a entrada foi editada (RN-008). */
+  updatedAt: string | null;
+}
+
+export interface DiaryEntryInput {
+  category: DiaryCategory;
+  title: string;
+  description: string;
+}
+
 /** Contrato único consumido pelas telas, independente de onde os dados vivem. */
 export interface EloApi {
   readonly mode: 'local' | 'http';
@@ -77,4 +100,10 @@ export interface EloApi {
   createInvite(token: string, workspaceId: string): Promise<InviteCode>;
   deleteInvite(token: string, inviteId: string): Promise<void>;
   joinWithCode(token: string, code: string): Promise<WorkspaceSummary>;
+  /** Entradas do workspace, da mais recente para a mais antiga. */
+  listEntries(token: string, workspaceId: string): Promise<DiaryEntry[]>;
+  getEntry(token: string, entryId: string): Promise<DiaryEntry>;
+  createEntry(token: string, workspaceId: string, input: DiaryEntryInput): Promise<DiaryEntry>;
+  updateEntry(token: string, entryId: string, input: DiaryEntryInput): Promise<DiaryEntry>;
+  deleteEntry(token: string, entryId: string): Promise<void>;
 }
