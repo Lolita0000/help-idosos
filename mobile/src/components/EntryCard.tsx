@@ -4,7 +4,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import type { DiaryEntry } from '../core';
 import { categoryOf } from '../core/diary';
-import { initials, relativeTime } from '../core/format';
+import { initials, relativeTime, shortDateTime } from '../core/format';
 import { colors, radius, TOUCH } from '../theme';
 import { Avatar, Feather, T } from './ui';
 
@@ -44,7 +44,8 @@ export function EntryCard({
           </T>
           <T size={12} color={colors.textMuted}>
             {relativeTime(entry.createdAt)}
-            {entry.updatedAt ? ' · editado' : ''}
+            {/* HU-06: a entrada editada aparece como tal, com o momento da alteração. */}
+            {entry.updatedAt ? ` · editado em ${shortDateTime(entry.updatedAt)}` : ''}
           </T>
         </View>
         <CategoryBadge category={entry.category} />
