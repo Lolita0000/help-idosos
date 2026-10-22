@@ -35,7 +35,7 @@ export default function Diario() {
 
   return (
     <Screen contentStyle={{ paddingBottom: 24 }}>
-      <AppHeader workspace={{ id, role: data?.ws.role }} current="diario" />
+      <AppHeader workspace={{ id, role: data?.ws.role }} current="diario" title={data?.ws.name} />
       <View style={styles.intro}>
         <T w="semibold" size={26} accessibilityRole="header">
           Diário de Cuidado
