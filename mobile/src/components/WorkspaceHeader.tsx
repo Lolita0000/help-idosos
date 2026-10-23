@@ -6,9 +6,8 @@ import { colors } from '../theme';
 import { Feather, T } from './ui';
 
 /**
- * Cabeçalho das telas internas do workspace na v0.1.
- * Dashboard e Diário entram na v0.2; por isso a navegação aqui mostra só
- * Membros e, para o administrador, Convites.
+ * Cabeçalho das telas de gestão do workspace (Membros e, para o administrador, Convites).
+ * A seta volta para o Diário, que é a tela inicial do workspace.
  */
 export function WorkspaceHeader({
   id,
@@ -25,9 +24,9 @@ export function WorkspaceHeader({
     <View>
       <View style={styles.top}>
         <Pressable
-          onPress={() => router.navigate('/workspaces')}
+          onPress={() => router.navigate({ pathname: '/workspace/[id]', params: { id } })}
           accessibilityRole="button"
-          accessibilityLabel="Voltar para Meus Workspaces"
+          accessibilityLabel="Voltar para o Diário"
           style={styles.back}
           hitSlop={6}
         >
@@ -38,7 +37,7 @@ export function WorkspaceHeader({
         </T>
       </View>
       <View style={styles.tabs} accessibilityRole="tablist">
-        <Tab label="Membros" icon="users" active={current === 'membros'} onPress={() => router.replace({ pathname: '/workspace/[id]', params: { id } })} />
+        <Tab label="Membros" icon="users" active={current === 'membros'} onPress={() => router.replace({ pathname: '/workspace/[id]/membros', params: { id } })} />
         {role === 'admin' ? (
           <Tab label="Convites" icon="send" active={current === 'convites'} onPress={() => router.replace({ pathname: '/workspace/[id]/convites', params: { id } })} />
         ) : null}

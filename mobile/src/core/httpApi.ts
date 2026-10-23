@@ -4,10 +4,16 @@
 //   GET  /api/workspaces · POST /api/workspaces · GET /api/workspaces/{id} · GET /api/workspaces/{id}/members
 //   GET  /api/invite-code?workspaceId= · POST /api/invite-code · DELETE /api/invite-code/{id}
 //   POST /api/invite-code/join
+// Diário (v0.2) — DiaryEntryController, branch feat/crud-entradas-diario:
+//   GET  /api/diary-entries?workspaceId= · POST /api/diary-entries · GET /api/diary-entries/{id}
+//   PATCH /api/diary-entries/{id} · DELETE /api/diary-entries/{id}
 
 import { ApiError, type ErrorCode } from './errors';
 import type {
   CreateWorkspaceInput,
+  DiaryCategory,
+  DiaryEntry,
+  DiaryEntryInput,
   EloApi,
   InviteCode,
   Member,
@@ -50,6 +56,35 @@ interface AuthDto {
   user: { id: number; name: string; email: string; createdAt: string };
 }
 
+/** DiaryEntryResponse do backend. */
+interface DiaryEntryDto {
+  id: number;
+  workspaceId: number;
+  authorId: number;
+  authorName: string;
+  title: string;
+  content: string;
+  /** medication · mood · symptom · appointment · note · other */
+  label: string;
+  edited: boolean;
+  editedAt: string | null;
+  createdAt: string;
+}
+
+/** Categoria do app → EntryLabel do backend, de 1 para 1. */
+const LABEL_BY_CATEGORY: Record<DiaryCategory, string> = {
+  medicamento: 'medication',
+  humor: 'mood',
+  sintoma: 'symptom',
+  consulta: 'appointment',
+  observacao: 'note',
+  outro: 'other',
+};
+
+const CATEGORY_BY_LABEL: Record<string, DiaryCategory> = Object.fromEntries(
+  Object.entries(LABEL_BY_CATEGORY).map(([category, label]) => [label, category as DiaryCategory]),
+);
+
 /** O backend grava datas em UTC sem o sufixo Z; sem ele o JS leria como hora local. */
 const utc = (d: string) => (/[zZ]|[+-]\d\d:?\d\d$/.test(d) ? d : `${d}Z`);
 
@@ -71,6 +106,36 @@ const toInvite = (i: InviteDto): InviteCode => ({
   createdAt: utc(i.createdAt),
   expiresAt: utc(i.expiresAt),
 });
+
+const toEntry = (e: DiaryEntryDto): DiaryEntry => ({
+  id: String(e.id),
+  workspaceId: String(e.workspaceId),
+  authorId: String(e.authorId),
+  authorName: e.authorName,
+  category: CATEGORY_BY_LABEL[e.label.toLowerCase()] ?? 'outro',
+  title: e.title,
+  description: e.content,
+  createdAt: utc(e.createdAt),
+  updatedAt: e.edited && e.editedAt ? utc(e.editedAt) : null,
+});
+
+/**
+ * Só os campos editáveis: autoria e horário nunca saem do cliente (RF05).
+ * moodLevel vai sempre nulo: o app não registra escala de humor.
+ */
+const entryBody = (i: DiaryEntryInput) => ({
+  title: i.title.trim(),
+  content: i.description.trim(),
+  label: LABEL_BY_CATEGORY[i.category],
+  moodLevel: null,
+});
+
+/** 403 com code NOT_AUTHOR: quem tentou não é o autor da entrada. */
+function notAuthor(e: unknown): never {
+  if (e instanceof ApiError && (e.code as string) === 'NOT_AUTHOR')
+    throw new ApiError('FORBIDDEN', 'Apenas quem registrou a entrada pode alterá-la ou removê-la.');
+  throw e;
+}
 
 function base64UrlDecode(input: string): string {
   const b64 = input.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(input.length / 4) * 4, '=');
@@ -254,6 +319,33 @@ export function createHttpApi(baseUrl: string): EloApi {
           throw new ApiError('ALREADY_MEMBER', 'Você já faz parte deste workspace.');
         throw e;
       }
+    },
+
+    async listEntries(token, workspaceId) {
+      const list = await call<DiaryEntryDto[]>(
+        'GET',
+        `/api/diary-entries?workspaceId=${encodeURIComponent(workspaceId)}`,
+        token,
+      );
+      return list.map(toEntry);
+    },
+
+    async getEntry(token, entryId) {
+      return toEntry(await call<DiaryEntryDto>('GET', `/api/diary-entries/${entryId}`, token));
+    },
+
+    async createEntry(token, workspaceId, input) {
+      const body = { workspaceId: Number(workspaceId), ...entryBody(input) };
+      return toEntry(await call<DiaryEntryDto>('POST', '/api/diary-entries', token, body));
+    },
+
+    async updateEntry(token, entryId, input) {
+      const body = entryBody(input);
+      return toEntry(await call<DiaryEntryDto>('PATCH', `/api/diary-entries/${entryId}`, token, body).catch(notAuthor));
+    },
+
+    async deleteEntry(token, entryId) {
+      await call<void>('DELETE', `/api/diary-entries/${entryId}`, token).catch(notAuthor);
     },
   };
 }

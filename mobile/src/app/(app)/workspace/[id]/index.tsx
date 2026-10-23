@@ -1,163 +1,116 @@
-// Figma: membros — pessoa acompanhada, administradores e membros do workspace.
+// Diário do workspace (abre direto em /workspace/[id]): entradas com filtro por categoria e ações de editar/excluir (HU-04, HU-06, HU-07).
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { WorkspaceHeader } from '../../../../components/WorkspaceHeader';
-import { Alert, Avatar, Button, Feather, Screen, T } from '../../../../components/ui';
-import { api, type Member } from '../../../../core';
-import { initials, longDate, plural } from '../../../../core/format';
+import { AppHeader } from '../../../../components/AppHeader';
+import { EntryCard } from '../../../../components/EntryCard';
+import { Select } from '../../../../components/Select';
+import { Alert, Button, Feather, Screen, T } from '../../../../components/ui';
+import { useEntryActions } from '../../../../components/useEntryActions';
+import { api, type DiaryCategory } from '../../../../core';
+import { CATEGORIES } from '../../../../core/diary';
 import { useLoad } from '../../../../hooks';
-import { colors, fonts } from '../../../../theme';
+import { colors } from '../../../../theme';
 
-export default function Membros() {
+type Filter = DiaryCategory | 'todas';
+const FILTERS = [{ value: 'todas' as Filter, label: 'Todas as categorias' }, ...CATEGORIES];
+
+export default function Diario() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: ws, error, loading } = useLoad((t) => api.getWorkspace(t, id));
-  const [q, setQ] = useState('');
+  const { data, error, loading, reload } = useLoad(async (t) => {
+    const [ws, entries] = await Promise.all([api.getWorkspace(t, id), api.listEntries(t, id)]);
+    return { ws, entries };
+  });
+  const actions = useEntryActions(id, data?.ws.role, () => void reload());
+  const [filter, setFilter] = useState<Filter>('todas');
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    const m = ws?.members ?? [];
-    return term ? m.filter((x) => x.name.toLowerCase().includes(term) || x.email.toLowerCase().includes(term)) : m;
-  }, [ws, q]);
-  const admins = filtered.filter((m) => m.role === 'admin');
-  const members = filtered.filter((m) => m.role === 'member');
-  const showSubject = !q.trim() || (ws?.subjectName ?? '').toLowerCase().includes(q.trim().toLowerCase());
+  const entries = data?.entries ?? [];
+  const shown = useMemo(
+    () => (filter === 'todas' ? entries : entries.filter((e) => e.category === filter)),
+    [entries, filter],
+  );
+
+  const newEntry = () => router.push({ pathname: '/workspace/[id]/diario/entrada', params: { id } });
 
   return (
-    <Screen contentStyle={{ paddingBottom: 32 }}>
-      <WorkspaceHeader id={id} name={ws?.name ?? 'Workspace'} role={ws?.role} current="membros" />
-      {loading && !ws ? (
-        <ActivityIndicator color={colors.primary} size="large" style={{ marginTop: 60 }} />
-      ) : error || !ws ? (
-        <View style={styles.pad}>
-          <Alert message={error ?? 'Workspace não encontrado.'} />
-        </View>
-      ) : (
-        <View style={styles.pad}>
-          <T w="semibold" size={26} accessibilityRole="header">
-            Membros
-          </T>
-          <T size={16} color={colors.textMuted} style={{ marginTop: 4 }}>
-            Gerencie a equipe de cuidado — {plural(ws.members.length, 'participante', 'participantes')}
-          </T>
-          {ws.role === 'admin' ? (
-            <Button
-              title="Convidar membros"
-              icon="user-plus"
-              small
-              onPress={() => router.replace({ pathname: '/workspace/[id]/convites', params: { id } })}
-              style={{ alignSelf: 'flex-start', marginTop: 14 }}
-            />
-          ) : null}
+    <Screen contentStyle={{ paddingBottom: 24 }}>
+      <AppHeader workspace={{ id, role: data?.ws.role }} current="diario" title={data?.ws.name} />
+      <View style={styles.intro}>
+        <T w="semibold" size={26} accessibilityRole="header">
+          Diário de Cuidado
+        </T>
+        <T size={16} color={colors.textMuted} style={{ marginTop: 4 }}>
+          Registre e acompanhe todas as informações importantes
+        </T>
+        {data ? (
+          <Button title="+ Nova entrada" small onPress={newEntry} style={{ alignSelf: 'flex-start', marginTop: 14 }} />
+        ) : null}
+      </View>
 
-          <View style={styles.search}>
-            <Feather name="search" size={18} color={colors.textMuted} />
-            <TextInput
-              value={q}
-              onChangeText={setQ}
-              placeholder="Buscar membros..."
-              placeholderTextColor="#757575"
-              accessibilityLabel="Buscar membros"
-              style={styles.searchInput}
-            />
+      <View style={styles.pad}>
+        {data ? (
+          <View style={styles.filterRow}>
+            <Feather name="filter" size={22} color={colors.text} style={{ marginRight: 10 }} />
+            <Select label="Filtrar por categoria" value={filter} options={FILTERS} onChange={setFilter} compact />
           </View>
+        ) : null}
 
-          {showSubject ? (
-            <>
-              <View style={styles.sectionRow}>
-                <View style={styles.sectionIcon}>
-                  <Feather name="heart" size={14} color={colors.primary} />
-                </View>
-                <T w="medium" size={17}>
-                  Pessoa acompanhada
-                </T>
-              </View>
-              <View style={[styles.person, styles.subject]}>
-                <Avatar text={initials(ws.subjectName)} tone="strong" />
-                <View style={{ marginLeft: 14, flex: 1 }}>
-                  <T w="medium" size={17}>
-                    {ws.subjectName}
-                  </T>
-                  <T size={13} color={colors.textMuted}>
-                    Sujeito acompanhado · registrado em {longDate(ws.createdAt)}
-                  </T>
-                </View>
-              </View>
-            </>
-          ) : null}
+        {actions.notice ? <Alert tone="success" message={actions.notice} /> : null}
+        {actions.failure ? <Alert message={actions.failure} /> : null}
+        {error ? <Alert message={error} /> : null}
 
-          <Section title={`Administradores (${admins.length})`} people={admins} />
-          <Section title={`Membros (${members.length})`} people={members} empty="Nenhum membro ainda. Gere um código em Convites e compartilhe." />
-        </View>
-      )}
+        {loading && !data ? (
+          <ActivityIndicator color={colors.primary} size="large" style={{ marginTop: 40 }} />
+        ) : !data ? null : entries.length === 0 ? (
+          <Empty onNew={newEntry} />
+        ) : shown.length === 0 ? (
+          <T size={15} color={colors.textMuted} style={{ textAlign: 'center', marginTop: 24 }}>
+            Nenhuma entrada nesta categoria.
+          </T>
+        ) : (
+          shown.map((e) => (
+            <EntryCard
+              key={e.id}
+              entry={e}
+              {...actions.permissions(e)}
+              onEdit={() => actions.edit(e)}
+              onDelete={() => actions.requestDelete(e)}
+            />
+          ))
+        )}
+      </View>
+      {actions.dialog}
     </Screen>
   );
 }
 
-function Section({ title, people, empty }: { title: string; people: Member[]; empty?: string }) {
+function Empty({ onNew }: { onNew: () => void }) {
   return (
-    <View>
-      <T w="medium" size={17} style={{ marginTop: 22, marginBottom: 10 }}>
-        {title}
+    <View style={styles.empty}>
+      <Feather name="book-open" size={36} color={colors.primary} />
+      <T w="semibold" size={17} style={{ marginTop: 12, textAlign: 'center' }}>
+        Nenhuma entrada ainda
       </T>
-      {people.length === 0 && empty ? (
-        <T size={14} color={colors.textMuted}>
-          {empty}
-        </T>
-      ) : null}
-      {people.map((p) => (
-        <View key={p.userId} style={styles.person}>
-          <Avatar text={initials(p.name)} />
-          <View style={{ marginLeft: 14, flex: 1 }}>
-            <T w="medium" size={17}>
-              {p.name}
-            </T>
-            <T size={13} color={colors.textMuted}>
-              {p.email}
-            </T>
-            <T size={13} color={colors.textMuted}>
-              Entrou em {longDate(p.joinedAt)}
-            </T>
-          </View>
-        </View>
-      ))}
+      <T size={15} color={colors.textMuted} style={{ marginTop: 6, textAlign: 'center' }}>
+        Registre medicamentos, consultas, sintomas e o que mais for importante no cuidado.
+      </T>
+      <Button title="Registrar a primeira entrada" small onPress={onNew} style={{ marginTop: 16 }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  pad: { paddingHorizontal: 22, paddingTop: 20 },
-  search: {
-    flexDirection: 'row',
+  intro: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 18, borderBottomWidth: 1, borderBottomColor: colors.border },
+  pad: { paddingHorizontal: 22, paddingTop: 18 },
+  filterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  empty: {
     alignItems: 'center',
+    padding: 24,
     borderWidth: 1,
-    borderColor: '#9CA3AF',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    minHeight: 48,
-    marginTop: 20,
-    marginBottom: 6,
+    borderColor: '#D6E4F5',
+    borderRadius: 12,
+    backgroundColor: colors.bgSoft,
+    marginTop: 8,
   },
-  searchInput: { flex: 1, marginLeft: 8, fontFamily: fonts.regular, fontSize: 16, color: colors.text, minHeight: 46 },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', marginTop: 18, marginBottom: 10 },
-  sectionIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  person: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#C9CED6',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-  },
-  subject: { backgroundColor: colors.primarySoft, borderColor: '#9DB8F2' },
 });
