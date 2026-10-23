@@ -1,4 +1,5 @@
 using EloDeCuidado.Data;
+using EloDeCuidado.DTOs.AuditLogs;
 using EloDeCuidado.DTOs.DiaryEntries;
 using EloDeCuidado.Models;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,20 @@ namespace EloDeCuidado.Services;
 /// Operações sobre as entradas do diário de um workspace.
 /// </summary>
 /// <param name="db">O contexto de banco de dados.</param>
-public sealed class DiaryEntryService(AppDbContext db) : IDiaryEntryService
+/// <param name="workspaceService">
+/// Fonte da verificação de papel. A regra de quem administra um workspace mora
+/// num lugar só: duplicá-la aqui criaria duas definições de permissão para
+/// manter em sincronia.
+/// </param>
+/// <param name="auditLog">
+/// Trilha de auditoria das ações sensíveis (RN-010). Os registros são
+/// enfileirados com <c>Record</c> e gravados pelo <c>SaveChanges</c> desta
+/// classe, de modo que auditoria e operação entram na mesma transação (RNF-006).
+/// </param>
+public sealed class DiaryEntryService(
+    AppDbContext db,
+    IWorkspaceService workspaceService,
+    IAuditLogService auditLog) : IDiaryEntryService
 {
     /// <inheritdoc />
     public async Task<IReadOnlyList<DiaryEntryResponse>?> GetByWorkspaceAsync(
@@ -132,6 +146,13 @@ public sealed class DiaryEntryService(AppDbContext db) : IDiaryEntryService
         entry.Status = EntryStatus.Edited;
         entry.EditedAt = DateTime.UtcNow;
 
+        // Edição é ação sensível (RN-010). Enfileirado antes do SaveChanges
+        // para entrar na mesma transação: se a alteração falhar, não fica
+        // registro de uma edição que não aconteceu.
+        auditLog.Record(
+            entry.WorkspaceId, requesterId, AuditAction.DiaryEntryUpdated,
+            AuditEntity.DiaryEntry, entry.Id);
+
         await db.SaveChangesAsync();
 
         return new DiaryEntryResult(DiaryEntryStatus.Ok, ToResponse(entry));
@@ -148,12 +169,25 @@ public sealed class DiaryEntryService(AppDbContext db) : IDiaryEntryService
         if (!await IsMemberAsync(entry.WorkspaceId, requesterId))
             return new DiaryEntryResult(DiaryEntryStatus.NotMember);
 
-        if (entry.AuthorId != requesterId)
+        // Excluem o autor e o administrador do workspace (RN-007). O
+        // administrador precisa conseguir remover registro indevido de qualquer
+        // membro, senão um relato impróprio ficaria no histórico de saúde sem
+        // ninguém com poder de tirá-lo.
+        var podeExcluir = entry.AuthorId == requesterId
+            || await workspaceService.IsAdminAsync(entry.WorkspaceId, requesterId);
+
+        if (!podeExcluir)
             return new DiaryEntryResult(DiaryEntryStatus.NotAuthor);
 
+        // O vestígio é registrado antes da remoção e na mesma transação
+        // (RN-010, RNF-006). Depois do SaveChanges a entrada não existe mais, e
+        // o AuditLog passa a ser o único rastro de que ela existiu: guarda quem
+        // removeu, o que foi removido e quando, nunca o conteúdo (RN-010).
+        auditLog.Record(
+            entry.WorkspaceId, requesterId, AuditAction.DiaryEntryDeleted,
+            AuditEntity.DiaryEntry, entry.Id);
+
         // Exclusão física: o registro sai do banco e não é recuperável (RN-006).
-        // O vestígio em AuditLog entra na #58, junto com a permissão do
-        // administrador para excluir entrada alheia (#57).
         db.DiaryEntries.Remove(entry);
         await db.SaveChangesAsync();
 

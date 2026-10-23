@@ -54,7 +54,8 @@ public class DiaryEntryServiceTests : IAsyncLifetime
         await _connection.DisposeAsync();
     }
 
-    private DiaryEntryService Servico() => new(_db);
+    private DiaryEntryService Servico() =>
+        new(_db, new WorkspaceService(_db), new AuditLogService(_db));
 
     private CreateDiaryEntryRequest Nova(
         string? titulo = "Tomou o remédio da pressão",
@@ -364,8 +365,9 @@ public class DiaryEntryServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task DeleteAsync_DeveRecusar_QuandoNaoForOAutor()
+    public async Task DeleteAsync_DeveRecusar_QuandoForMembroComumENaoAutor()
     {
+        // RN-007: membro comum não remove registro alheio.
         var service = Servico();
         var criada = await service.CreateAsync(Nova(), _autorId);
 
@@ -373,6 +375,182 @@ public class DiaryEntryServiceTests : IAsyncLifetime
 
         Assert.Equal(DiaryEntryStatus.NotAuthor, result.Status);
         Assert.Single(_db.DiaryEntries);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_DevePermitirAoAdministrador_EmEntradaAlheia()
+    {
+        // RN-007: o administrador remove registro indevido de qualquer membro.
+        // Sem isso, um relato impróprio ficaria no histórico de saúde sem
+        // ninguém com poder de tirá-lo.
+        //
+        // _autorId é o administrador da fixture; a entrada aqui é do membro comum.
+
+        var service = Servico();
+        var criada = await service.CreateAsync(Nova(titulo: "Do membro"), _outroMembroId);
+
+        var result = await service.DeleteAsync(criada.Entry!.Id, _autorId);
+
+        Assert.Equal(DiaryEntryStatus.Ok, result.Status);
+        Assert.Empty(_db.DiaryEntries);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_NaoDevePermitirAAdministradorDeOutroWorkspace()
+    {
+        // Ser administrador em algum lugar não dá poder em todo lugar: a
+        // verificação é por workspace da entrada.
+
+        var outro = new Workspace { Name = "Outro", SubjectName = "Outra Pessoa" };
+        _db.Workspaces.Add(outro);
+        await _db.SaveChangesAsync();
+        _db.WorkspaceMembers.Add(new WorkspaceMember
+        {
+            WorkspaceId = outro.Id,
+            UserId = _estranhoId,
+            Role = MemberRole.Admin,
+        });
+        await _db.SaveChangesAsync();
+
+        var service = Servico();
+        var criada = await service.CreateAsync(Nova(), _autorId);
+
+        var result = await service.DeleteAsync(criada.Entry!.Id, _estranhoId);
+
+        // Nem sequer participa deste workspace: para antes da checagem de papel.
+        Assert.Equal(DiaryEntryStatus.NotMember, result.Status);
+        Assert.Single(_db.DiaryEntries);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NaoDevePermitirAoAdministrador_EditarEntradaAlheia()
+    {
+        // A permissão do administrador é só para excluir (RN-007). Editar
+        // continua restrito ao autor (RN-008): um relato alterado por terceiro
+        // perderia a confiabilidade, mesmo vindo de quem administra.
+
+        var service = Servico();
+        var criada = await service.CreateAsync(Nova(titulo: "Do membro"), _outroMembroId);
+
+        var result = await service.UpdateAsync(
+            criada.Entry!.Id, new UpdateDiaryEntryRequest("Alterado pelo admin", null, null, null), _autorId);
+
+        Assert.Equal(DiaryEntryStatus.NotAuthor, result.Status);
+        var naBase = await _db.DiaryEntries.FindAsync(criada.Entry.Id);
+        Assert.Equal("Do membro", naBase!.Title);
+    }
+
+    // RN-010 e RNF-006: auditoria das ações sensíveis
+
+    [Fact]
+    public async Task DeleteAsync_DeveRegistrarVestigioEmAuditLog()
+    {
+        // Depois da exclusão física a entrada não existe mais, e o AuditLog
+        // passa a ser o único rastro de que ela existiu.
+
+        var service = Servico();
+        var criada = await service.CreateAsync(Nova(), _autorId);
+
+        await service.DeleteAsync(criada.Entry!.Id, _autorId);
+
+        var log = Assert.Single(_db.AuditLogs);
+        Assert.Equal("diary_entry.deleted", log.Action);
+        Assert.Equal("diary_entry", log.Entity);
+        Assert.Equal(criada.Entry.Id, log.EntityId);
+        Assert.Equal(_autorId, log.UserId);
+        Assert.Equal(_workspaceId, log.WorkspaceId);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_DeveRegistrarQuemRemoveu_EdNaoQuemEscreveu()
+    {
+        // Quando o administrador remove entrada alheia, o responsável pela ação
+        // é ele. Registrar o autor da entrada apontaria o culpado errado.
+
+        var service = Servico();
+        var criada = await service.CreateAsync(Nova(), _outroMembroId);
+
+        await service.DeleteAsync(criada.Entry!.Id, _autorId);
+
+        var log = Assert.Single(_db.AuditLogs);
+        Assert.Equal(_autorId, log.UserId);
+        Assert.NotEqual(_outroMembroId, log.UserId);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DeveRegistrarVestigioEmAuditLog()
+    {
+        // A RN-010 exige auditar edição, não apenas exclusão.
+
+        var service = Servico();
+        var criada = await service.CreateAsync(Nova(), _autorId);
+
+        await service.UpdateAsync(
+            criada.Entry!.Id, new UpdateDiaryEntryRequest("Corrigido", null, null, null), _autorId);
+
+        var log = Assert.Single(_db.AuditLogs);
+        Assert.Equal("diary_entry.updated", log.Action);
+        Assert.Equal(criada.Entry.Id, log.EntityId);
+        Assert.Equal(_autorId, log.UserId);
+    }
+
+    [Fact]
+    public async Task CreateAsync_NaoDeveGerarAuditoria()
+    {
+        // A RN-010 lista edição e exclusão. Registrar criação encheria a trilha
+        // de ruído e tiraria o foco do que ela existe para provar.
+
+        await Servico().CreateAsync(Nova(), _autorId);
+
+        Assert.Empty(_db.AuditLogs);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NaoDeveAuditar_QuandoARecusaOcorrer()
+    {
+        // Tentativa recusada não é ação executada: auditar aqui registraria algo
+        // que não aconteceu.
+
+        var service = Servico();
+        var criada = await service.CreateAsync(Nova(), _autorId);
+
+        await service.UpdateAsync(
+            criada.Entry!.Id, new UpdateDiaryEntryRequest("x", null, null, null), _outroMembroId);
+
+        Assert.Empty(_db.AuditLogs);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_NaoDeveAuditar_QuandoARecusaOcorrer()
+    {
+        var service = Servico();
+        var criada = await service.CreateAsync(Nova(titulo: "Do admin"), _autorId);
+
+        // Membro comum não remove entrada alheia.
+        await service.DeleteAsync(criada.Entry!.Id, _outroMembroId);
+
+        Assert.Empty(_db.AuditLogs);
+        Assert.Single(_db.DiaryEntries);
+    }
+
+    [Fact]
+    public async Task AuditLog_NaoDeveRetarOConteudoDaEntradaExcluida()
+    {
+        // RN-010: o AuditLog não armazena o conteúdo das entradas. Guardar o
+        // texto faria a exclusão definitiva da RN-006 deixar de ser definitiva.
+
+        const string segredo = "Relato sensivel que nao pode sobreviver a exclusao";
+
+        var service = Servico();
+        var criada = await service.CreateAsync(
+            Nova(titulo: segredo, conteudo: segredo), _autorId);
+
+        await service.DeleteAsync(criada.Entry!.Id, _autorId);
+
+        var log = Assert.Single(_db.AuditLogs);
+        Assert.DoesNotContain(segredo, log.Action);
+        Assert.DoesNotContain(segredo, log.Entity);
+        Assert.Empty(_db.DiaryEntries);
     }
 
     // Listagem
