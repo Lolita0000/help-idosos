@@ -10,7 +10,7 @@ import { useSession } from '../session';
 import { colors } from '../theme';
 import { Avatar, Dialog, Feather, Logo, T } from './ui';
 
-export type MenuPage = 'diario' | 'membros' | 'convites' | 'workspaces';
+export type MenuPage = 'diario' | 'membros' | 'convites' | 'workspaces' | 'conta';
 
 /** Workspace aberto: com ele, o menu mostra o "Menu principal" do workspace. */
 export interface MenuWorkspace {
@@ -81,6 +81,8 @@ function UserMenu({
           ) : null}
           <SectionLabel>Workspaces</SectionLabel>
           <Item icon="layers" label="Meus Workspaces" active={current === 'workspaces'} onPress={() => go('/workspaces')} />
+          <SectionLabel>Conta</SectionLabel>
+          <Item icon="user" label="Minha conta" active={current === 'conta'} onPress={() => go('/conta')} />
 
           <View style={{ flex: 1 }} />
           <View style={styles.sep} />
@@ -115,7 +117,6 @@ function UserMenu({
           setConfirm(false);
           onClose();
           await logout();
-          router.replace('/login');
         }}
       />
     </Modal>

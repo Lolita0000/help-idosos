@@ -9,7 +9,12 @@ interface SessionState {
   user: User | null;
   login(email: string, password: string): Promise<void>;
   register(input: RegisterInput): Promise<void>;
+  /** Para onde a área autenticada leva quando a sessão termina. */
+  exitTo: '/' | '/login';
+  /** Sai da conta e leva à tela de login. */
   logout(): Promise<void>;
+  /** HU-05: exclui a conta no servidor, encerra a sessão e leva à tela inicial. */
+  deleteAccount(): Promise<void>;
   /** Encerra a sessão quando a API responde que o token não vale mais (RN-013). */
   handleAuthError(error: unknown): boolean;
 }
@@ -20,6 +25,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  // O destino é definido antes de limpar o usuário, para a área autenticada já
+  // redirecionar ao lugar certo (sem disputar a navegação com a tela que saiu).
+  const [exitTo, setExitTo] = useState<'/' | '/login'>('/');
 
   useEffect(() => {
     (async () => {
@@ -55,6 +63,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     if (token) await api.logout(token).catch(() => undefined);
     await sessionStore.clear();
+    setExitTo('/login');
+    setToken(null);
+    setUser(null);
+  }, [token]);
+
+  const deleteAccount = useCallback(async () => {
+    if (!token) return;
+    await api.deleteAccount(token);
+    await sessionStore.clear();
+    setExitTo('/');
     setToken(null);
     setUser(null);
   }, [token]);
@@ -71,8 +89,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ ready, token, user, login, register, logout, handleAuthError }),
-    [ready, token, user, login, register, logout, handleAuthError],
+    () => ({ ready, token, user, exitTo, login, register, logout, deleteAccount, handleAuthError }),
+    [ready, token, user, exitTo, login, register, logout, deleteAccount, handleAuthError],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

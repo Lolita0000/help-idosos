@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { FontScaleProvider } from '../fontScale';
 import { SessionProvider, useSession } from '../session';
 import { colors } from '../theme';
 
@@ -48,9 +49,11 @@ export default function Layout() {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       {loaded || error ? (
-        <SessionProvider>
-          <Root />
-        </SessionProvider>
+        <FontScaleProvider>
+          <SessionProvider>
+            <Root />
+          </SessionProvider>
+        </FontScaleProvider>
       ) : (
         <Splash />
       )}

@@ -106,4 +106,10 @@ export interface EloApi {
   createEntry(token: string, workspaceId: string, input: DiaryEntryInput): Promise<DiaryEntry>;
   updateEntry(token: string, entryId: string, input: DiaryEntryInput): Promise<DiaryEntry>;
   deleteEntry(token: string, entryId: string): Promise<void>;
+  /**
+   * HU-05: exclui a conta e os dados pessoais de quem está autenticado, de forma
+   * irreversível. Falha com ADMIN_HAS_MEMBERS se a pessoa administra workspace com
+   * outros membros ativos (RN-012).
+   */
+  deleteAccount(token: string): Promise<void>;
 }
