@@ -80,17 +80,22 @@ namespace EloDeCuidado.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<DateTime?>("EditedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("Label")
                         .HasColumnType("int");
 
+                    b.Property<int?>("MoodLevel")
+                        .HasColumnType("int");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
 
                     b.Property<int>("WorkspaceId")
                         .HasColumnType("int");
