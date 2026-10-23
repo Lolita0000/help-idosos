@@ -1,4 +1,5 @@
 using EloDeCuidado.Data;
+using EloDeCuidado.DTOs.AuditLogs;
 using EloDeCuidado.DTOs.DiaryEntries;
 using EloDeCuidado.Models;
 using Microsoft.EntityFrameworkCore;
@@ -14,8 +15,15 @@ namespace EloDeCuidado.Services;
 /// num lugar só: duplicá-la aqui criaria duas definições de permissão para
 /// manter em sincronia.
 /// </param>
-public sealed class DiaryEntryService(AppDbContext db, IWorkspaceService workspaceService)
-    : IDiaryEntryService
+/// <param name="auditLog">
+/// Trilha de auditoria das ações sensíveis (RN-010). Os registros são
+/// enfileirados com <c>Record</c> e gravados pelo <c>SaveChanges</c> desta
+/// classe, de modo que auditoria e operação entram na mesma transação (RNF-006).
+/// </param>
+public sealed class DiaryEntryService(
+    AppDbContext db,
+    IWorkspaceService workspaceService,
+    IAuditLogService auditLog) : IDiaryEntryService
 {
     /// <inheritdoc />
     public async Task<IReadOnlyList<DiaryEntryResponse>?> GetByWorkspaceAsync(
@@ -138,6 +146,13 @@ public sealed class DiaryEntryService(AppDbContext db, IWorkspaceService workspa
         entry.Status = EntryStatus.Edited;
         entry.EditedAt = DateTime.UtcNow;
 
+        // Edição é ação sensível (RN-010). Enfileirado antes do SaveChanges
+        // para entrar na mesma transação: se a alteração falhar, não fica
+        // registro de uma edição que não aconteceu.
+        auditLog.Record(
+            entry.WorkspaceId, requesterId, AuditAction.DiaryEntryUpdated,
+            AuditEntity.DiaryEntry, entry.Id);
+
         await db.SaveChangesAsync();
 
         return new DiaryEntryResult(DiaryEntryStatus.Ok, ToResponse(entry));
@@ -164,8 +179,15 @@ public sealed class DiaryEntryService(AppDbContext db, IWorkspaceService workspa
         if (!podeExcluir)
             return new DiaryEntryResult(DiaryEntryStatus.NotAuthor);
 
+        // O vestígio é registrado antes da remoção e na mesma transação
+        // (RN-010, RNF-006). Depois do SaveChanges a entrada não existe mais, e
+        // o AuditLog passa a ser o único rastro de que ela existiu: guarda quem
+        // removeu, o que foi removido e quando, nunca o conteúdo (RN-010).
+        auditLog.Record(
+            entry.WorkspaceId, requesterId, AuditAction.DiaryEntryDeleted,
+            AuditEntity.DiaryEntry, entry.Id);
+
         // Exclusão física: o registro sai do banco e não é recuperável (RN-006).
-        // O vestígio em AuditLog entra na #58.
         db.DiaryEntries.Remove(entry);
         await db.SaveChangesAsync();
 
