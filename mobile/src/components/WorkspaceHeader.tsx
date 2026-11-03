@@ -9,16 +9,20 @@ import { Feather, T } from './ui';
  * Cabeçalho das telas de gestão do workspace (Membros e, para o administrador, Convites).
  * A seta volta para o Diário, que é a tela inicial do workspace.
  */
+export type TeamTab = 'membros' | 'convites';
+
 export function WorkspaceHeader({
   id,
   name,
   role,
   current,
+  onTab,
 }: {
   id: string;
   name: string;
   role?: Role;
-  current: 'membros' | 'convites';
+  current: TeamTab;
+  onTab: (tab: TeamTab) => void;
 }) {
   return (
     <View>
@@ -37,10 +41,8 @@ export function WorkspaceHeader({
         </T>
       </View>
       <View style={styles.tabs} accessibilityRole="tablist">
-        <Tab label="Membros" icon="users" active={current === 'membros'} onPress={() => router.replace({ pathname: '/workspace/[id]/membros', params: { id } })} />
-        {role === 'admin' ? (
-          <Tab label="Convites" icon="send" active={current === 'convites'} onPress={() => router.replace({ pathname: '/workspace/[id]/convites', params: { id } })} />
-        ) : null}
+        <Tab label="Membros" icon="users" active={current === 'membros'} onPress={() => onTab('membros')} />
+        {role === 'admin' ? <Tab label="Convites" icon="send" active={current === 'convites'} onPress={() => onTab('convites')} /> : null}
       </View>
     </View>
   );

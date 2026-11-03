@@ -105,7 +105,7 @@ export function BottomNav() {
       case 'diario':
         return id ? { pathname: '/workspace/[id]', params: { id } } : null;
       case 'membros':
-        return id ? { pathname: '/workspace/[id]/membros', params: { id } } : null;
+        return id ? { pathname: '/workspace/[id]/membros', params: { id, aba: 'membros' } } : null;
     }
   };
 
