@@ -81,7 +81,7 @@ export default function Conta() {
           <T w="semibold" size={20} numberOfLines={1}>
             {user.name}
           </T>
-          <T w="medium" size={15} color="rgba(0,0,0,0.5)" numberOfLines={1}>
+          <T w="medium" size={15} color="rgba(0,0,0,0.6)" numberOfLines={1}>
             {user.email}
           </T>
         </View>
@@ -204,7 +204,7 @@ function Row({ icon, label, href, hint, last }: { icon: IconName; label: string;
         {label}
       </T>
       {hint ? (
-        <T w="medium" size={11} color="rgba(0,0,0,0.5)" style={{ marginRight: 8 }}>
+        <T w="medium" size={11} color="rgba(0,0,0,0.6)" style={{ marginRight: 8 }}>
           {hint}
         </T>
       ) : null}

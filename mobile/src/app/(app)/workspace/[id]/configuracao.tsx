@@ -107,7 +107,7 @@ export default function Configuracao() {
           Configuração
         </T>
         <T size={16} color={colors.textMuted} style={{ marginTop: 4, marginBottom: 18 }}>
-          Dados do espaço de cuidado
+          Dados do workspace
         </T>
 
         {error ? <Alert message={error} /> : null}
