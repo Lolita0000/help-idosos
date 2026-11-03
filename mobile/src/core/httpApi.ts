@@ -7,6 +7,7 @@
 // Diário (v0.2) — DiaryEntryController, branch feat/crud-entradas-diario:
 //   GET  /api/diary-entries?workspaceId= · POST /api/diary-entries · GET /api/diary-entries/{id}
 //   PATCH /api/diary-entries/{id} · DELETE /api/diary-entries/{id}
+// Conta (v1.0): DELETE /api/users/{id}/delete
 
 import { ApiError, type ErrorCode } from './errors';
 import type {
@@ -346,6 +347,24 @@ export function createHttpApi(baseUrl: string): EloApi {
 
     async deleteEntry(token, entryId) {
       await call<void>('DELETE', `/api/diary-entries/${entryId}`, token).catch(notAuthor);
+    },
+
+    // HU-05: o id vem do próprio token, para ninguém apagar a conta de outra pessoa.
+    // 409 com code ADMIN_HAS_MEMBERS = administra workspace com outros membros (RN-012).
+    async deleteAccount(token) {
+      const me = userFromToken(token);
+      try {
+        await call<void>('DELETE', `/api/users/${me.id}/delete`, token);
+      } catch (e) {
+        if (e instanceof ApiError && (e.code === 'ADMIN_HAS_MEMBERS' || e.code === 'EMAIL_IN_USE'))
+          throw new ApiError(
+            'ADMIN_HAS_MEMBERS',
+            e.code === 'ADMIN_HAS_MEMBERS'
+              ? e.message
+              : 'Você administra workspaces com outros membros ativos. Transfira a administração antes de excluir sua conta.',
+          );
+        throw e;
+      }
     },
   };
 }

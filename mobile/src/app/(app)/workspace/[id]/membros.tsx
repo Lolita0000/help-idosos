@@ -7,12 +7,14 @@ import { WorkspaceHeader } from '../../../../components/WorkspaceHeader';
 import { Alert, Avatar, Button, Feather, Screen, T } from '../../../../components/ui';
 import { api, type Member } from '../../../../core';
 import { initials, longDate, plural } from '../../../../core/format';
+import { useFontScale } from '../../../../fontScale';
 import { useLoad } from '../../../../hooks';
 import { colors, fonts } from '../../../../theme';
 
 export default function Membros() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: ws, error, loading } = useLoad((t) => api.getWorkspace(t, id));
+  const { scale } = useFontScale();
   const [q, setQ] = useState('');
 
   const filtered = useMemo(() => {
@@ -59,7 +61,7 @@ export default function Membros() {
               placeholder="Buscar membros..."
               placeholderTextColor="#757575"
               accessibilityLabel="Buscar membros"
-              style={styles.searchInput}
+              style={[styles.searchInput, { fontSize: Math.round(16 * scale) }]}
             />
           </View>
 
