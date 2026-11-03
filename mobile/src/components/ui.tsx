@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -52,12 +52,15 @@ export function T({
 
 /* ---------- Estrutura de tela ---------- */
 
+/** Verdadeiro quando a barra inferior está na tela e já cuida da área segura de baixo. */
+export const BottomNavContext = createContext(false);
+
 export function Screen({
   children,
   bg = colors.white,
   scroll = true,
   contentStyle,
-  edges = ['top', 'bottom'],
+  edges: edgesProp = ['top', 'bottom'],
 }: {
   children: ReactNode;
   bg?: string;
@@ -65,6 +68,8 @@ export function Screen({
   contentStyle?: StyleProp<ViewStyle>;
   edges?: ('top' | 'bottom')[];
 }) {
+  const hasNav = useContext(BottomNavContext);
+  const edges = hasNav ? edgesProp.filter((e) => e !== 'bottom') : edgesProp;
   const body = scroll ? (
     <ScrollView
       contentContainerStyle={[styles.scroll, contentStyle]}
