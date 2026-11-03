@@ -4,7 +4,7 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export const PASSWORD_HINT =
-  'Mínimo de 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.';
+  'De 8 a 24 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.';
 
 export function isValidEmail(email: string): boolean {
   return EMAIL_RE.test(email.trim());
@@ -13,6 +13,7 @@ export function isValidEmail(email: string): boolean {
 /** Mesmas regras de PasswordHasher.IsStrong no backend. */
 export function passwordError(password: string): string | null {
   if (!password || password.length < 8) return 'A senha deve conter no mínimo 8 caracteres.';
+  if (password.length > 24) return 'A senha deve conter no máximo 24 caracteres.';
   if (!/[A-ZÀ-Ý]/.test(password)) return 'A senha deve conter pelo menos uma letra maiúscula.';
   if (!/[a-zß-ÿ]/.test(password)) return 'A senha deve conter pelo menos uma letra minúscula.';
   if (!/\d/.test(password)) return 'A senha deve conter pelo menos um número.';

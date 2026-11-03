@@ -275,7 +275,7 @@ docker run --rm -v "$(pwd):/src" -w /src/backend-tests/EloDeCuidado.Tests \
   mcr.microsoft.com/dotnet/sdk:10.0 dotnet test
 ```
 
-Esperado: **99 testes, 0 falhas**.
+Esperado: **147 testes, 0 falhas**.
 
 > Rode de dentro da pasta do projeto. O `global.json` declara o runner `Microsoft.Testing.Platform`, e a combinação `--project` com `--no-build` faz o `dotnet test` não reconhecer o runner e rodar zero teste. **Zero teste executado não é sucesso** — confira a contagem na saída.
 
