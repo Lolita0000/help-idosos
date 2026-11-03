@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 
 import { WorkspaceHeader } from '../../../../components/WorkspaceHeader';
-import { Alert, Avatar, Button, Feather, Screen, T } from '../../../../components/ui';
+import { Alert, Avatar, Button, FadeIn, Feather, Screen, T } from '../../../../components/ui';
 import { api, type Member } from '../../../../core';
 import { initials, longDate, plural } from '../../../../core/format';
 import { useFontScale } from '../../../../fontScale';
@@ -29,6 +29,7 @@ export default function Membros() {
   return (
     <Screen contentStyle={{ paddingBottom: 32 }}>
       <WorkspaceHeader id={id} name={ws?.name ?? 'Workspace'} role={ws?.role} current="membros" />
+      <FadeIn>
       {loading && !ws ? (
         <ActivityIndicator color={colors.primary} size="large" style={{ marginTop: 60 }} />
       ) : error || !ws ? (
@@ -93,6 +94,7 @@ export default function Membros() {
           <Section title={`Membros (${members.length})`} people={members} empty="Nenhum membro ainda. Gere um código em Convites e compartilhe." />
         </View>
       )}
+      </FadeIn>
     </Screen>
   );
 }

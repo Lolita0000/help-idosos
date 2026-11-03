@@ -23,7 +23,7 @@ function Root() {
   const { ready } = useSession();
   if (!ready) return <Splash />;
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.white }, animation: 'slide_from_right' }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.white }, animation: 'ios_from_right' }}>
       <Stack.Screen name="index" options={{ animation: 'fade' }} />
     </Stack>
   );

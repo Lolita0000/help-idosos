@@ -18,7 +18,14 @@ export default function AppLayout() {
     <BottomNavContext.Provider value={navVisible}>
       <View style={{ flex: 1, backgroundColor: colors.white }}>
         <View style={{ flex: 1 }}>
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.white }, animation: 'slide_from_right' }} />
+          {/* Telas de detalhe deslizam e invertem o sentido ao voltar; telas de aba trocam sem direção, para não parecer que "vão" quando se "volta". */}
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.white }, animation: 'ios_from_right' }}>
+            <Stack.Screen name="workspaces" options={{ animation: 'fade' }} />
+            <Stack.Screen name="conta" options={{ animation: 'fade' }} />
+            <Stack.Screen name="workspace/[id]/index" options={{ animation: 'fade' }} />
+            <Stack.Screen name="workspace/[id]/membros" options={{ animation: 'none' }} />
+            <Stack.Screen name="workspace/[id]/convites" options={{ animation: 'none' }} />
+          </Stack>
         </View>
         {navVisible ? <BottomNav /> : null}
       </View>

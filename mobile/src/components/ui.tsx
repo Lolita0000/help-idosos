@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -496,6 +497,15 @@ export function BackLink({ label = 'Voltar', onPress }: { label?: string; onPres
       </T>
     </Pressable>
   );
+}
+
+/** Faz o conteúdo aparecer suavemente. Usado abaixo das abas, para só o corpo da tela mudar. */
+export function FadeIn({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+  }, [opacity]);
+  return <Animated.View style={[{ opacity }, style]}>{children}</Animated.View>;
 }
 
 /** Cabeçalho das telas internas do Figma: seta de voltar e título ao lado. */
