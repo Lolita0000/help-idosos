@@ -70,7 +70,9 @@ Membros entram no workspace via invite code multi-use com prazo de expiração.
 
 ## Confirmidade com a LGPD
 
-O sistema implementa os seguintes mecanismos:
+A política completa de retenção, exclusão e anonimização está em
+[DATA_LIFECYCLE.md](DATA_LIFECYCLE.md). O sistema implementa os seguintes
+mecanismos:
 
 - **Consentimento**: o cadastro exige aceite explícito dos termos (RN-015).
 - **Rastreabilidade**: edição e exclusão de entradas geram registro em `AuditLog`
