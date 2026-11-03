@@ -1,6 +1,6 @@
 # Elo de Cuidado 💙
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000)
 ![React Native](https://img.shields.io/badge/React_Native-Expo-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-ASP.NET_Core-purple.svg)
 ![Database](https://img.shields.io/badge/Database-MariaDB-teal.svg)
@@ -31,10 +31,26 @@ Diferente de aplicativos como MyTherapy, Medisafe ou Google Keep, focados em uso
 |---|---|
 | Aplicativo | React Native + Expo (Android) |
 | Backend | ASP.NET Core (.NET 10) |
-| Banco de dados | MariaDB |
-| ORM | Entity Framework |
-| Infraestrutura | Docker |
-| Geração de PDF | Typst |
+| Banco de dados | MariaDB 11 |
+| ORM | Entity Framework Core |
+| Autenticação | JWT HMAC-SHA256 + BCrypt |
+| Infraestrutura | Docker Compose |
+
+## O que está entregue
+
+| Versão | Entrega |
+|---|---|
+| **v0.1** | Cadastro com aceite dos termos, autenticação por token, criação de workspace e ingresso por código de convite |
+| **v0.2** | Diário de cuidado: registrar, editar e excluir entradas, com permissão por autor e administrador e trilha de auditoria |
+| **v1.0** | Histórico com filtros, ajuste de tamanho de fonte, exclusão de conta e dados pessoais, backup automático |
+
+O aplicativo Android é distribuído pelas
+[releases](https://github.com/Lolita0000/help-idosos/releases) do repositório.
+Sem endereço de API configurado, ele funciona em **modo demonstração**, com os
+dados no próprio aparelho.
+
+Fora do MVP: geração de relatório em PDF, recuperação de senha e registro de
+observações pelo próprio sujeito acompanhado.
 
 ## Estrutura do repositório
 
@@ -43,12 +59,16 @@ Diferente de aplicativos como MyTherapy, Medisafe ou Google Keep, focados em uso
 ├── backend/        # API REST em ASP.NET Core
 ├── backend-tests/  # Testes automatizados da API
 ├── mobile/         # Aplicativo Android em React Native + Expo
+├── scripts/        # Backup e restauração do banco
 └── docs/           # Documentação técnica e diagramas
 ```
 
 ## Como rodar
 
-Consulte o [guia de setup](SETUP.md) para instruções de instalação e execução local e via Docker.
+Consulte o [guia de setup](SETUP.md) para instalação e execução local via Docker,
+a [arquitetura](docs/ARCHITECTURE.md) para as decisões de projeto e o
+[procedimento de backup](docs/BACKUP.md) para a política de cópia e restauração
+do banco.
 
 ## 🤝 Contribuindo
 
