@@ -25,12 +25,17 @@ public sealed class DiaryEntry
     /// Quem registrou. Definido pelo servidor a partir do token, nunca pelo
     /// cliente, porque a autoria decide quem pode editar depois (RN-008).
     /// </summary>
-    [Required]
-    public int AuthorId { get; set; }
+    /// <remarks>
+    /// Fica nulo quando o autor exerce o direito de eliminação da LGPD (HU-05,
+    /// RN-011). A entrada permanece no diário dos demais participantes com a
+    /// autoria anonimizada (RN-014): apagar o relato junto apagaria o histórico
+    /// de saúde de outra pessoa, que não pediu nada.
+    /// </remarks>
+    public int? AuthorId { get; set; }
 
     /// <inheritdoc cref="AuthorId" />
     [ForeignKey(nameof(AuthorId))]
-    public User Author { get; set; } = null!;
+    public User? Author { get; set; }
 
     /// <summary>Título da entrada, exibido na listagem do diário.</summary>
     [Required, MaxLength(120)]

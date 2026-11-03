@@ -49,19 +49,25 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .HasForeignKey(al => al.WorkspaceId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // SetNull, e não Cascade: quando o autor exerce o direito de eliminação
+        // (HU-05), a entrada permanece no diário dos demais participantes com a
+        // autoria anonimizada (RN-014). Apagar junto removeria o histórico de
+        // saúde de outra pessoa, que não pediu nada.
         modelBuilder
             .Entity<DiaryEntry>()
             .HasOne(de => de.Author)
             .WithMany()
             .HasForeignKey(de => de.AuthorId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.SetNull);
 
+        // Mesma razão: a trilha de auditoria sobrevive à exclusão da conta,
+        // preservando o que foi feito e quando, sem a identificação de quem fez.
         modelBuilder
             .Entity<AuditLog>()
             .HasOne(al => al.User)
             .WithMany()
             .HasForeignKey(al => al.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder
             .Entity<WorkspaceMember>()

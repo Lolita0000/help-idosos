@@ -14,11 +14,20 @@ public sealed class AuditLog
     [ForeignKey(nameof(WorkspaceId))]
     public Workspace Workspace { get; set; } = null!;
 
-    [Required]
-    public int UserId { get; set; }
+    /// <summary>
+    /// Responsável pela ação registrada (RN-010).
+    /// </summary>
+    /// <remarks>
+    /// Fica nulo quando o responsável exerce o direito de eliminação (HU-05).
+    /// A trilha preserva o que foi feito e quando, perdendo apenas a
+    /// identificação de quem fez. É o ponto de atrito entre reter para auditar
+    /// e eliminar a pedido do titular, tratado na política de dados (#61).
+    /// </remarks>
+    public int? UserId { get; set; }
 
+    /// <inheritdoc cref="UserId" />
     [ForeignKey(nameof(UserId))]
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 
     [Required, MaxLength(100)]
     public required string Action { get; set; }

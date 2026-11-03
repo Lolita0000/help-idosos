@@ -46,7 +46,7 @@ namespace EloDeCuidado.Migrations
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.Property<int>("WorkspaceId")
@@ -69,7 +69,7 @@ namespace EloDeCuidado.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AuthorId")
+                    b.Property<int?>("AuthorId")
                         .HasColumnType("int");
 
                     b.Property<string>("Content")
@@ -246,8 +246,7 @@ namespace EloDeCuidado.Migrations
                     b.HasOne("EloDeCuidado.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("EloDeCuidado.Models.Workspace", "Workspace")
                         .WithMany()
@@ -265,8 +264,7 @@ namespace EloDeCuidado.Migrations
                     b.HasOne("EloDeCuidado.Models.User", "Author")
                         .WithMany()
                         .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("EloDeCuidado.Models.Workspace", "Workspace")
                         .WithMany("DiaryEntries")
