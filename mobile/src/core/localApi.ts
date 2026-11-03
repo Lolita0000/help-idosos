@@ -57,8 +57,8 @@ type EntryRow = Omit<DiaryEntry, 'authorName'>;
 interface AuditRow {
   id: string;
   userId: string;
-  action: 'ENTRY_UPDATED' | 'ENTRY_DELETED';
-  entity: 'DiaryEntry';
+  action: 'ENTRY_UPDATED' | 'ENTRY_DELETED' | 'ACCOUNT_DELETED';
+  entity: 'DiaryEntry' | 'User';
   entityId: string;
   workspaceId: string;
   at: string;
@@ -455,6 +455,53 @@ export const localApi: EloApi = {
       throw new ApiError('FORBIDDEN', 'Apenas o autor ou o administrador podem excluir esta entrada.');
     db.entries = db.entries.filter((e) => e.id !== entryId);
     db.audit.push({ id: uuid(), userId: user.id, action: 'ENTRY_DELETED', entity: 'DiaryEntry', entityId: entryId, workspaceId: entry.workspaceId, at: now() });
+    await save(db);
+  },
+
+  // HU-05: direito ao esquecimento (RN-011), com a autoria anonimizada nos workspaces
+  // compartilhados (RN-014) e o bloqueio do administrador com membros ativos (RN-012).
+  async deleteAccount(token) {
+    const db = await load();
+    const user = requireUser(db, token);
+    const mine = db.members.filter((m) => m.userId === user.id);
+
+    const blocking = mine
+      .filter((m) => m.role === 'admin')
+      .filter((m) => db.members.some((o) => o.workspaceId === m.workspaceId && o.userId !== user.id))
+      .map((m) => db.workspaces.find((w) => w.id === m.workspaceId)?.name ?? 'Workspace');
+    if (blocking.length)
+      throw new ApiError(
+        'ADMIN_HAS_MEMBERS',
+        `Você administra workspaces com outros membros ativos. Transfira a administração antes de excluir sua conta: ${blocking.join(', ')}.`,
+        { workspaces: blocking.join('\n') },
+      );
+
+    // Workspace em que a pessoa era a única participante não é compartilhado com
+    // ninguém: sai inteiro, com entradas e convites.
+    const solo = new Set(
+      mine
+        .map((m) => m.workspaceId)
+        .filter((wid) => !db.members.some((o) => o.workspaceId === wid && o.userId !== user.id)),
+    );
+    db.workspaces = db.workspaces.filter((w) => !solo.has(w.id));
+    db.entries = db.entries.filter((e) => !solo.has(e.workspaceId));
+    db.invites = db.invites.filter((i) => !solo.has(i.workspaceId));
+
+    // Nos workspaces compartilhados, as entradas ficam no histórico do sujeito
+    // acompanhado, com a autoria trocada por um identificador anônimo (RN-014).
+    const anon = `anonimo-${uuid()}`;
+    db.entries.forEach((e) => {
+      if (e.authorId === user.id) e.authorId = anon;
+    });
+    db.audit.forEach((a) => {
+      if (a.userId === user.id) a.userId = anon;
+    });
+
+    db.members = db.members.filter((m) => m.userId !== user.id);
+    db.sessions = db.sessions.filter((x) => x.userId !== user.id); // invalida todos os tokens
+    delete db.attempts[user.email];
+    db.users = db.users.filter((u) => u.id !== user.id);
+    db.audit.push({ id: uuid(), userId: anon, action: 'ACCOUNT_DELETED', entity: 'User', entityId: anon, workspaceId: '', at: now() });
     await save(db);
   },
 };

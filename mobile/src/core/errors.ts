@@ -9,6 +9,7 @@ export type ErrorCode =
   | 'INVITE_INVALID'
   | 'INVITE_EXPIRED'
   | 'ALREADY_MEMBER'
+  | 'ADMIN_HAS_MEMBERS'
   | 'NETWORK';
 
 /** Erro de negócio com código estável, para a tela decidir onde exibir a mensagem. */

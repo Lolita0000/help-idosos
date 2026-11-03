@@ -1,4 +1,5 @@
-// Diário do workspace (abre direto em /workspace/[id]): entradas com filtro por categoria e ações de editar/excluir (HU-04, HU-06, HU-07).
+// Diário do workspace (abre direto em /workspace/[id]): histórico das entradas com contagem e
+// filtros por categoria e por autor (HU-08) e ações de editar/excluir (HU-04, HU-06, HU-07).
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -10,11 +11,13 @@ import { Alert, Button, Feather, Screen, T } from '../../../../components/ui';
 import { useEntryActions } from '../../../../components/useEntryActions';
 import { api, type DiaryCategory } from '../../../../core';
 import { CATEGORIES } from '../../../../core/diary';
+import { plural } from '../../../../core/format';
 import { useLoad } from '../../../../hooks';
 import { colors } from '../../../../theme';
 
 type Filter = DiaryCategory | 'todas';
 const FILTERS = [{ value: 'todas' as Filter, label: 'Todas as categorias' }, ...CATEGORIES];
+const ALL_AUTHORS = 'todos';
 
 export default function Diario() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,12 +27,26 @@ export default function Diario() {
   });
   const actions = useEntryActions(id, data?.ws.role, () => void reload());
   const [filter, setFilter] = useState<Filter>('todas');
+  const [author, setAuthor] = useState<string>(ALL_AUTHORS);
 
   const entries = data?.entries ?? [];
+  // Autores que aparecem nas entradas do workspace, em ordem alfabética.
+  const authors = useMemo(() => {
+    const byId = new Map(entries.map((e) => [e.authorId, e.authorName]));
+    return [
+      { value: ALL_AUTHORS, label: 'Todos os autores' },
+      ...[...byId].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
+    ];
+  }, [entries]);
+  // HU-08: os filtros são combináveis e a lista mantém a ordem da mais recente para a mais antiga.
   const shown = useMemo(
-    () => (filter === 'todas' ? entries : entries.filter((e) => e.category === filter)),
-    [entries, filter],
+    () =>
+      entries.filter(
+        (e) => (filter === 'todas' || e.category === filter) && (author === ALL_AUTHORS || e.authorId === author),
+      ),
+    [entries, filter, author],
   );
+  const filtered = filter !== 'todas' || author !== ALL_AUTHORS;
 
   const newEntry = () => router.push({ pathname: '/workspace/[id]/diario/entrada', params: { id } });
 
@@ -49,11 +66,19 @@ export default function Diario() {
       </View>
 
       <View style={styles.pad}>
-        {data ? (
-          <View style={styles.filterRow}>
-            <Feather name="filter" size={22} color={colors.text} style={{ marginRight: 10 }} />
-            <Select label="Filtrar por categoria" value={filter} options={FILTERS} onChange={setFilter} compact />
-          </View>
+        {data && entries.length > 0 ? (
+          <>
+            <View style={styles.filterRow}>
+              <Feather name="filter" size={22} color={colors.text} />
+              <Select label="Filtrar por categoria" value={filter} options={FILTERS} onChange={setFilter} compact />
+              <Select label="Filtrar por autor" value={author} options={authors} onChange={setAuthor} compact />
+            </View>
+            <T size={14} color={colors.textMuted} style={{ marginBottom: 12 }} accessibilityLiveRegion="polite">
+              {filtered
+                ? `${plural(shown.length, 'registro exibido', 'registros exibidos')} de ${entries.length}`
+                : plural(entries.length, 'registro', 'registros')}
+            </T>
+          </>
         ) : null}
 
         {actions.notice ? <Alert tone="success" message={actions.notice} /> : null}
@@ -66,7 +91,7 @@ export default function Diario() {
           <Empty onNew={newEntry} />
         ) : shown.length === 0 ? (
           <T size={15} color={colors.textMuted} style={{ textAlign: 'center', marginTop: 24 }}>
-            Nenhuma entrada nesta categoria.
+            Nenhuma entrada com esses filtros.
           </T>
         ) : (
           shown.map((e) => (
@@ -103,7 +128,7 @@ function Empty({ onNew }: { onNew: () => void }) {
 const styles = StyleSheet.create({
   intro: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 18, borderBottomWidth: 1, borderBottomColor: colors.border },
   pad: { paddingHorizontal: 22, paddingTop: 18 },
-  filterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  filterRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
   empty: {
     alignItems: 'center',
     padding: 24,
