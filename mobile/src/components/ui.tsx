@@ -85,7 +85,8 @@ export function Screen({
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <SafeAreaView edges={edges} style={{ flex: 1 }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* No Android com tela de ponta a ponta o sistema não redimensiona sozinho: o padding vale nos dois. */}
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <View style={styles.column}>{body}</View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -456,7 +457,7 @@ export function Dialog({
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel} statusBarTranslucent>
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView style={styles.overlay} behavior="padding">
         <View style={styles.dialog} accessibilityViewIsModal>
           {icon ? <Feather name={icon} size={22} color={colors.primary} style={{ alignSelf: 'center', marginBottom: 10 }} /> : null}
           <T w="semibold" size={15} color={danger ? colors.danger : colors.text} style={{ textAlign: 'center' }}>
@@ -483,7 +484,7 @@ export function Dialog({
             ) : null}
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
