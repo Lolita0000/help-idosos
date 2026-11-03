@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { api, ApiError, type RegisterInput, type User } from './core';
 import { sessionStore } from './core/storage';
+import { workspaceCache } from './core/workspaceCache';
 
 interface SessionState {
   ready: boolean;
@@ -65,6 +66,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     if (token) await api.logout(token).catch(() => undefined);
     await sessionStore.clear();
+    workspaceCache.clear();
     setExitTo('/login');
     setToken(null);
     setUser(null);
@@ -74,6 +76,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (!token) return;
     await api.deleteAccount(token);
     await sessionStore.clear();
+    workspaceCache.clear();
     setExitTo('/');
     setToken(null);
     setUser(null);

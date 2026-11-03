@@ -8,18 +8,28 @@ import { WorkspaceHeader } from '../../../../components/WorkspaceHeader';
 import { Alert, Badge, Button, Dialog, FadeIn, Feather, Screen, T } from '../../../../components/ui';
 import { api, ApiError, messageOf, type InviteCode } from '../../../../core';
 import { formatCode, isExpired, longDateTime } from '../../../../core/format';
-import { useLoad, useTransient } from '../../../../hooks';
+import { workspaceCache } from '../../../../core/workspaceCache';
+import { useLoad, useTransient, useWorkspace } from '../../../../hooks';
 import { useSession } from '../../../../session';
 import { colors } from '../../../../theme';
 
 export default function Convites() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token, handleAuthError } = useSession();
-  const { data, error, loading, reload } = useLoad(async (t) => {
-    const ws = await api.getWorkspace(t, id);
-    const invites = ws.role === 'admin' ? await api.listInvites(t, id) : [];
-    return { ws, invites };
+  const { ws, error: wsError, loading: wsLoading } = useWorkspace(id);
+  const {
+    data: invites,
+    error: invitesError,
+    loading: invitesLoading,
+    reload,
+  } = useLoad(async (t) => {
+    // Só o administrador lista códigos; para os demais o servidor responderia 403.
+    const detail = workspaceCache.get(id) ?? (await api.getWorkspace(t, id));
+    return detail.role === 'admin' ? api.listInvites(t, id) : [];
   });
+  const error = wsError ?? invitesError;
+  const loading = wsLoading || (invitesLoading && !invites);
+  const data = ws && invites ? { ws, invites } : null;
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useTransient();
   const [failure, setFailure] = useTransient();
@@ -79,7 +89,6 @@ export default function Convites() {
     setRemoving((r) => r.filter((x) => x !== inv.id));
   }
 
-  const ws = data?.ws;
   return (
     <Screen contentStyle={{ paddingBottom: 32 }}>
       <WorkspaceHeader id={id} name={ws?.name ?? 'Workspace'} role={ws?.role ?? 'admin'} current="convites" />
@@ -125,12 +134,12 @@ export default function Convites() {
           <T w="medium" size={17} style={{ marginTop: 8, marginBottom: 12 }}>
             Códigos gerados
           </T>
-          {data.invites.length === 0 ? (
+          {(invites ?? []).length === 0 ? (
             <T size={15} color={colors.textMuted} style={styles.justify}>
               Nenhum código gerado ainda. Toque em “+ Gerar Código”.
             </T>
           ) : null}
-          {data.invites.filter((inv) => !removing.includes(inv.id)).map((inv) => {
+          {(invites ?? []).filter((inv) => !removing.includes(inv.id)).map((inv) => {
             const expired = isExpired(inv.expiresAt);
             return (
               <View key={inv.id} style={[styles.code, expired && { opacity: 0.75 }]}>

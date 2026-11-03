@@ -1,8 +1,38 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { messageOf } from './core';
+import { api, messageOf, type WorkspaceDetail } from './core';
+import { workspaceCache } from './core/workspaceCache';
 import { useSession } from './session';
+
+export function useWorkspace(id: string) {
+  const { token, handleAuthError } = useSession();
+  const [ws, setWs] = useState<WorkspaceDetail | null>(() => workspaceCache.get(id) ?? null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(!workspaceCache.has(id));
+
+  const reload = useCallback(async () => {
+    if (!token) return;
+    try {
+      const fresh = await api.getWorkspace(token, id);
+      workspaceCache.set(id, fresh);
+      setWs(fresh);
+      setError(null);
+    } catch (e) {
+      if (!handleAuthError(e)) setError(messageOf(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [token, id, handleAuthError]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
+
+  return { ws, error, loading, reload };
+}
 
 /**
  * Mensagem de confirmação ou de erro que some sozinha depois de alguns segundos

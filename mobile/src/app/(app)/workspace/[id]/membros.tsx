@@ -5,15 +5,15 @@ import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 
 import { WorkspaceHeader } from '../../../../components/WorkspaceHeader';
 import { Alert, Avatar, Button, FadeIn, Feather, Screen, T } from '../../../../components/ui';
-import { api, type Member } from '../../../../core';
+import type { Member } from '../../../../core';
 import { initials, longDate, plural } from '../../../../core/format';
 import { useFontScale } from '../../../../fontScale';
-import { useLoad } from '../../../../hooks';
+import { useWorkspace } from '../../../../hooks';
 import { colors, fonts } from '../../../../theme';
 
 export default function Membros() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: ws, error, loading } = useLoad((t) => api.getWorkspace(t, id));
+  const { ws, error, loading } = useWorkspace(id);
   const { scale } = useFontScale();
   const [q, setQ] = useState('');
 
