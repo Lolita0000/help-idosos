@@ -42,6 +42,15 @@ public interface IUserService
     /// </remarks>
     Task<DeleteAccountResult> DeleteAccountAsync(int id);
 
+    /// <summary>Dados pessoais da conta, ou <c>null</c> se ela não existir.</summary>
+    Task<ProfileResponse?> GetProfileAsync(int id);
+
+    /// <summary>
+    /// Altera os dados pessoais. Assume a requisição já validada por
+    /// <c>ProfileRules.Validate</c>.
+    /// </summary>
+    Task<ProfileResponse?> UpdateProfileAsync(int id, UpdateProfileRequest request);
+
     /// <summary>
     /// Busca a entidade de usuário pelo e-mail. Usado na autenticação, por
     /// retornar o hash da senha, que não é exposto no <see cref="UserResponse"/>.

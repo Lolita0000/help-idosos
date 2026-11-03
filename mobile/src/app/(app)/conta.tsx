@@ -75,6 +75,7 @@ export default function Conta() {
       </View>
 
       <View style={styles.list}>
+        <Row icon="user" label="Dados pessoais" href="/dados-pessoais" />
         <Row icon="type" label="Acessibilidade" href="/acessibilidade" />
         <Row icon="file-text" label="Termos de uso" href="/termos" />
         <Row icon="shield" label="Política de privacidade" href="/privacidade" last />

@@ -14,18 +14,29 @@ import type {
   DiaryEntry,
   DiaryEntryInput,
   EloApi,
+  Gender,
   InviteCode,
   Member,
+  Profile,
   RegisterInput,
   Role,
   Session,
   User,
+  UpdateProfileInput,
   UpdateWorkspaceInput,
   WorkspaceDetail,
   WorkspaceStats,
   WorkspaceSummary,
 } from './types';
-import { isValidEmail, normalizeCode, passwordError, validateEntry, validateWorkspace } from './validation';
+import {
+  isoToDisplay,
+  isValidEmail,
+  normalizeCode,
+  passwordError,
+  validateEntry,
+  validateProfile,
+  validateWorkspace,
+} from './validation';
 
 bcrypt.setRandomFallback((len: number) => Array.from(Crypto.getRandomBytes(len)));
 
@@ -39,6 +50,9 @@ const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O e 1/I
 
 interface UserRow extends User {
   passwordHash: string;
+  phone?: string;
+  birthDate?: string;
+  gender?: Gender | '';
 }
 interface WorkspaceRow {
   id: string;
@@ -256,6 +270,24 @@ export const localApi: EloApi = {
   async me(token) {
     const db = await load();
     return publicUser(requireUser(db, token));
+  },
+
+  async getProfile(token): Promise<Profile> {
+    const u = requireUser(await load(), token);
+    return { name: u.name, email: u.email, phone: u.phone ?? '', birthDate: u.birthDate ?? '', gender: u.gender ?? '' };
+  },
+
+  async updateProfile(token, input: UpdateProfileInput): Promise<Profile> {
+    const fields = validateProfile({ ...input, birthDate: isoToDisplay(input.birthDate) });
+    if (Object.keys(fields).length) throw new ApiError('VALIDATION', 'Revise os campos.', fields);
+    const db = await load();
+    const u = requireUser(db, token);
+    u.name = input.name.trim();
+    u.phone = input.phone.replace(/\D/g, '');
+    u.birthDate = input.birthDate;
+    u.gender = input.gender;
+    await save(db);
+    return { name: u.name, email: u.email, phone: u.phone, birthDate: u.birthDate, gender: u.gender };
   },
 
   async listWorkspaces(token) {

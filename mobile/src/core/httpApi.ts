@@ -8,6 +8,7 @@
 //   GET  /api/diary-entries?workspaceId= · POST /api/diary-entries · GET /api/diary-entries/{id}
 //   PATCH /api/diary-entries/{id} · DELETE /api/diary-entries/{id}
 // Conta (v1.0): DELETE /api/users/{id}/delete
+// Perfil (v1.0): GET /api/users/me · PATCH /api/users/me
 // Configuração (v1.0): GET /api/workspaces/{id}/stats · PATCH /api/workspaces/{id} · DELETE /api/workspaces/{id}
 
 import { ApiError, type ErrorCode } from './errors';
@@ -17,8 +18,10 @@ import type {
   DiaryEntry,
   DiaryEntryInput,
   EloApi,
+  Gender,
   InviteCode,
   Member,
+  Profile,
   RegisterInput,
   Role,
   Session,
@@ -58,6 +61,22 @@ interface AuthDto {
   expiresAt: string;
   user: { id: number; name: string; email: string; createdAt: string };
 }
+
+interface ProfileDto {
+  name: string;
+  email: string;
+  phone: string | null;
+  birthDate: string | null;
+  gender: Gender | null;
+}
+
+const toProfile = (p: ProfileDto): Profile => ({
+  name: p.name,
+  email: p.email,
+  phone: p.phone ?? '',
+  birthDate: p.birthDate ?? '',
+  gender: p.gender ?? '',
+});
 
 /** DiaryEntryResponse do backend. */
 interface DiaryEntryDto {
@@ -263,6 +282,22 @@ export function createHttpApi(baseUrl: string): EloApi {
 
     async me(token) {
       return userFromToken(token);
+    },
+
+    async getProfile(token) {
+      return toProfile(await call<ProfileDto>('GET', '/api/users/me', token));
+    },
+
+    async updateProfile(token, input) {
+      // Vazio apaga no servidor; data vazia exige clearBirthDate.
+      const r = await call<ProfileDto>('PATCH', '/api/users/me', token, {
+        name: input.name.trim(),
+        phone: input.phone.replace(/\D/g, ''),
+        birthDate: input.birthDate || null,
+        clearBirthDate: !input.birthDate,
+        gender: input.gender,
+      });
+      return toProfile(r);
     },
 
     async listWorkspaces(token) {

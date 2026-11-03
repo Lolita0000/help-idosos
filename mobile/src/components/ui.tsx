@@ -241,6 +241,7 @@ export function Field({
   textContentType,
   maxLength,
   center,
+  readOnly,
 }: {
   label?: string;
   value: string;
@@ -249,13 +250,15 @@ export function Field({
   error?: string;
   helper?: string;
   secure?: boolean;
-  keyboardType?: 'default' | 'email-address';
+  keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'number-pad';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   multiline?: boolean;
   autoComplete?: 'email' | 'name' | 'password' | 'new-password' | 'off';
   textContentType?: 'emailAddress' | 'name' | 'password' | 'newPassword' | 'none';
   maxLength?: number;
   center?: boolean;
+  /** Mostra o valor sem permitir edição (ex.: e-mail que identifica a conta). */
+  readOnly?: boolean;
 }) {
   const [hidden, setHidden] = useState(true);
   const [focused, setFocused] = useState(false);
@@ -283,6 +286,7 @@ export function Field({
           textContentType={textContentType}
           multiline={multiline}
           maxLength={maxLength}
+          editable={!readOnly}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={[
@@ -290,6 +294,7 @@ export function Field({
             { fontSize: Math.round(16 * scale) },
             multiline && { textAlignVertical: 'top', paddingTop: 12, minHeight: 96 },
             center && { textAlign: 'center', letterSpacing: 2 },
+            readOnly && { color: colors.textMuted, backgroundColor: '#F3F4F6' },
             Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null,
           ]}
         />

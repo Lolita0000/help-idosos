@@ -82,6 +82,49 @@ public sealed class UserService(AppDbContext db) : IUserService
     }
 
     /// <inheritdoc />
+    public async Task<ProfileResponse?> GetProfileAsync(int id)
+    {
+        var user = await db.Users.FindAsync(id);
+
+        return user is null ? null : ToProfile(user);
+    }
+
+    /// <inheritdoc />
+    public async Task<ProfileResponse?> UpdateProfileAsync(int id, UpdateProfileRequest request)
+    {
+        var user = await db.Users.FindAsync(id);
+
+        if (user is null)
+            return null;
+
+        if (request.Name is not null)
+            user.Name = request.Name.Trim();
+
+        // Texto vazio apaga; nulo significa "não mexa".
+        if (request.Phone is not null)
+            user.Phone = string.IsNullOrWhiteSpace(request.Phone)
+                ? null
+                : ProfileRules.PhoneDigits(request.Phone);
+
+        if (request.ClearBirthDate)
+            user.BirthDate = null;
+        else if (request.BirthDate is not null)
+            user.BirthDate = request.BirthDate;
+
+        if (request.Gender is not null)
+            user.Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim();
+
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await db.SaveChangesAsync();
+
+        return ToProfile(user);
+    }
+
+    private static ProfileResponse ToProfile(User u) =>
+        new(u.Id, u.Name, u.Email, u.Phone, u.BirthDate, u.Gender, u.CreatedAt);
+
+    /// <inheritdoc />
     public async Task<DeleteAccountResult> DeleteAccountAsync(int id)
     {
         var user = await db.Users.FindAsync(id);

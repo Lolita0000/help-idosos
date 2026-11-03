@@ -96,6 +96,7 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
     /// automático. Para que ele participe, gere um código de convite depois.
     /// </remarks>
     /// <response code="200">Workspace criado.</response>
+    /// <response code="400">Nome ou sujeito em branco, ou texto acima do limite.</response>
     /// <response code="401">Token ausente ou inválido.</response>
     [Authorize]
     [HttpPost]
@@ -107,6 +108,14 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
 
         if (userId is null)
             return Unauthorized();
+
+        // Mesmas regras da edição: sem isso, uma chamada direta à API criava
+        // workspace sem nome ou estourava a coluna com erro 500.
+        var invalid = ValidateUpdate(new UpdateWorkspaceRequest(
+            request.Name ?? "", request.SubjectName ?? "", request.Description));
+
+        if (invalid is not null)
+            return BadRequest(new { error = invalid });
 
         var workspace = await workspaceService.CreateAsync(request, userId.Value);
 

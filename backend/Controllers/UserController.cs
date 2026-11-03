@@ -18,6 +18,55 @@ namespace EloDeCuidado.Controllers;
 public sealed class UserController(IUserService userService) : ControllerBase
 {
     /// <summary>
+    /// Dados pessoais da conta autenticada (perfil).
+    /// </summary>
+    /// <response code="200">Nome, e-mail, telefone, nascimento e gênero.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(ProfileResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProfile()
+    {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var profile = await userService.GetProfileAsync(userId.Value);
+
+        return profile is null ? NotFound() : Ok(profile);
+    }
+
+    /// <summary>
+    /// Altera os dados pessoais da conta autenticada. Campos omitidos não mudam.
+    /// </summary>
+    /// <remarks>
+    /// O e-mail e a senha não são alterados aqui. O telefone é aceito com ou sem
+    /// máscara e guardado só com dígitos.
+    /// </remarks>
+    /// <response code="200">Perfil atualizado.</response>
+    /// <response code="400">Nome em branco, telefone sem DDD, data no futuro ou gênero inválido.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    [HttpPatch("me")]
+    [ProducesResponseType(typeof(ProfileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var invalid = ProfileRules.Validate(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        if (invalid is not null)
+            return BadRequest(new { error = invalid });
+
+        var profile = await userService.UpdateProfileAsync(userId.Value, request);
+
+        return profile is null ? NotFound() : Ok(profile);
+    }
+
+    /// <summary>
     /// Retorna os dados da própria conta.
     /// </summary>
     /// <response code="200">Dados do usuário autenticado.</response>

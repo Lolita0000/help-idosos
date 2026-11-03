@@ -15,6 +15,8 @@ interface SessionState {
   logout(): Promise<void>;
   /** HU-05: exclui a conta no servidor, encerra a sessão e leva à tela inicial. */
   deleteAccount(): Promise<void>;
+  /** Reflete na sessão o que mudou nos dados pessoais, para o nome exibido não ficar velho. */
+  updateUser(patch: Partial<User>): void;
   /** Encerra a sessão quando a API responde que o token não vale mais (RN-013). */
   handleAuthError(error: unknown): boolean;
 }
@@ -77,6 +79,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, [token]);
 
+  const updateUser = useCallback((patch: Partial<User>) => setUser((u) => (u ? { ...u, ...patch } : u)), []);
+
   const handleAuthError = useCallback(
     (error: unknown) => {
       if (error instanceof ApiError && error.code === 'UNAUTHORIZED') {
@@ -89,8 +93,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ ready, token, user, exitTo, login, register, logout, deleteAccount, handleAuthError }),
-    [ready, token, user, exitTo, login, register, logout, deleteAccount, handleAuthError],
+    () => ({ ready, token, user, exitTo, login, register, logout, deleteAccount, updateUser, handleAuthError }),
+    [ready, token, user, exitTo, login, register, logout, deleteAccount, updateUser, handleAuthError],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

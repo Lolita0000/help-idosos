@@ -43,9 +43,9 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
     {
         var workspace = new Workspace
         {
-            Name = request.Name,
-            Description = request.Description,
-            SubjectName = request.SubjectName,
+            Name = request.Name.Trim(),
+            Description = request.Description?.Trim(),
+            SubjectName = request.SubjectName.Trim(),
         };
 
         // O criador vira administrador do workspace (RN-001). Workspace e

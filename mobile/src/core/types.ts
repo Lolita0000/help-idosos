@@ -12,6 +12,21 @@ export interface User {
   termsAcceptedAt: string;
 }
 
+export type Gender = 'feminino' | 'masculino' | 'outro' | 'nao_informar';
+
+/** Dados pessoais do titular. Campos opcionais vazios são texto vazio. */
+export interface Profile {
+  name: string;
+  email: string;
+  /** Somente dígitos, com DDD. */
+  phone: string;
+  /** AAAA-MM-DD. */
+  birthDate: string;
+  gender: Gender | '';
+}
+
+export type UpdateProfileInput = Pick<Profile, 'name' | 'phone' | 'birthDate' | 'gender'>;
+
 export interface Session {
   token: string;
   expiresAt: string;
@@ -106,6 +121,8 @@ export interface EloApi {
   login(email: string, password: string): Promise<Session>;
   logout(token: string): Promise<void>;
   me(token: string): Promise<User>;
+  getProfile(token: string): Promise<Profile>;
+  updateProfile(token: string, input: UpdateProfileInput): Promise<Profile>;
   listWorkspaces(token: string): Promise<WorkspaceSummary[]>;
   createWorkspace(token: string, input: CreateWorkspaceInput): Promise<WorkspaceSummary>;
   getWorkspace(token: string, workspaceId: string): Promise<WorkspaceDetail>;
