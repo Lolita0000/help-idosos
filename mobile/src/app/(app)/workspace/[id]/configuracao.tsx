@@ -10,7 +10,7 @@ import { api, ApiError, messageOf } from '../../../../core';
 import { plural } from '../../../../core/format';
 import { validateWorkspace } from '../../../../core/validation';
 import { useFontScale } from '../../../../fontScale';
-import { useLoad } from '../../../../hooks';
+import { useLoad, useTransient } from '../../../../hooks';
 import { useSession } from '../../../../session';
 import { colors, fonts, radius, TOUCH } from '../../../../theme';
 
@@ -35,7 +35,7 @@ export default function Configuracao() {
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useTransient();
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<Step>('idle');
   const [typed, setTyped] = useState('');

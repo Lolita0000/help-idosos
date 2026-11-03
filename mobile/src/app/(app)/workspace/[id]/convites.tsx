@@ -5,10 +5,10 @@ import { useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { WorkspaceHeader } from '../../../../components/WorkspaceHeader';
-import { Alert, Badge, Button, Dialog, Feather, Screen, T } from '../../../../components/ui';
-import { api, messageOf, type InviteCode } from '../../../../core';
+import { Alert, Badge, Button, Dialog, FadeIn, Feather, Screen, T } from '../../../../components/ui';
+import { api, ApiError, messageOf, type InviteCode } from '../../../../core';
 import { formatCode, isExpired, longDateTime } from '../../../../core/format';
-import { useLoad } from '../../../../hooks';
+import { useLoad, useTransient } from '../../../../hooks';
 import { useSession } from '../../../../session';
 import { colors } from '../../../../theme';
 
@@ -21,9 +21,11 @@ export default function Convites() {
     return { ws, invites };
   });
   const [creating, setCreating] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [failure, setFailure] = useState<string | null>(null);
+  const [notice, setNotice] = useTransient();
+  const [failure, setFailure] = useTransient();
   const [toDelete, setToDelete] = useState<InviteCode | null>(null);
+  // Códigos já enviados para exclusão: somem da lista na hora e não podem ser excluídos de novo.
+  const [removing, setRemoving] = useState<string[]>([]);
 
   async function generate() {
     if (!token) return;
@@ -59,19 +61,29 @@ export default function Convites() {
     if (!token || !toDelete) return;
     const inv = toDelete;
     setToDelete(null);
+    if (removing.includes(inv.id)) return;
+    setRemoving((r) => [...r, inv.id]);
     try {
       await api.deleteInvite(token, inv.id);
       setNotice(`Código ${formatCode(inv.code)} removido.`);
-      await reload();
     } catch (e) {
-      if (!handleAuthError(e)) setFailure(messageOf(e));
+      // O servidor responde "sem acesso" a um código que não existe mais, então
+      // um código já excluído não deve aparecer como erro de permissão.
+      if (e instanceof ApiError && (e.code === 'FORBIDDEN' || e.code === 'NOT_FOUND')) {
+        setNotice(`O código ${formatCode(inv.code)} já foi removido.`);
+      } else if (!handleAuthError(e)) {
+        setFailure(messageOf(e));
+      }
     }
+    await reload();
+    setRemoving((r) => r.filter((x) => x !== inv.id));
   }
 
   const ws = data?.ws;
   return (
     <Screen contentStyle={{ paddingBottom: 32 }}>
       <WorkspaceHeader id={id} name={ws?.name ?? 'Workspace'} role={ws?.role ?? 'admin'} current="convites" />
+      <FadeIn>
       {loading && !data ? (
         <ActivityIndicator color={colors.primary} size="large" style={{ marginTop: 60 }} />
       ) : error || !ws ? (
@@ -87,10 +99,10 @@ export default function Convites() {
           <T w="semibold" size={26} accessibilityRole="header">
             Convites
           </T>
-          <T size={16} color={colors.textMuted} style={{ marginTop: 4 }}>
+          <T size={16} color={colors.textMuted} style={styles.justify}>
             Gerencie códigos de convite para adicionar novos membros
           </T>
-          <Button title="Convidar membros" icon="plus" small loading={creating} onPress={generate} style={{ alignSelf: 'flex-start', marginTop: 14 }} />
+          <Button title="+ Gerar Código" small loading={creating} onPress={generate} style={{ alignSelf: 'flex-start', marginTop: 14 }} />
 
           <View style={styles.how}>
             <View style={styles.howIcon}>
@@ -100,7 +112,7 @@ export default function Convites() {
               <T w="medium" size={17}>
                 Como funciona?
               </T>
-              <T size={14} color={colors.textSoft} style={{ marginTop: 4 }}>
+              <T size={14} color={colors.textSoft} style={[styles.justify, { marginTop: 4 }]}>
                 Gere um código de convite e compartilhe com a pessoa que deseja adicionar ao workspace. Ela poderá usar o
                 código na tela de workspaces, em “Entrar com código”. Cada código vale por 24 horas.
               </T>
@@ -114,11 +126,11 @@ export default function Convites() {
             Códigos gerados
           </T>
           {data.invites.length === 0 ? (
-            <T size={15} color={colors.textMuted}>
-              Nenhum código gerado ainda. Toque em “Convidar membros”.
+            <T size={15} color={colors.textMuted} style={styles.justify}>
+              Nenhum código gerado ainda. Toque em “+ Gerar Código”.
             </T>
           ) : null}
-          {data.invites.map((inv) => {
+          {data.invites.filter((inv) => !removing.includes(inv.id)).map((inv) => {
             const expired = isExpired(inv.expiresAt);
             return (
               <View key={inv.id} style={[styles.code, expired && { opacity: 0.75 }]}>
@@ -151,6 +163,7 @@ export default function Convites() {
           })}
         </View>
       )}
+      </FadeIn>
       <Dialog
         visible={!!toDelete}
         icon="trash-2"
@@ -185,6 +198,7 @@ function IconBtn({
 
 const styles = StyleSheet.create({
   pad: { paddingHorizontal: 22, paddingTop: 20 },
+  justify: { textAlign: 'justify', marginTop: 4 },
   how: {
     flexDirection: 'row',
     backgroundColor: colors.primarySoft,

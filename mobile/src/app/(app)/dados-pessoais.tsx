@@ -13,7 +13,7 @@ import {
   maskPhone,
   validateProfile,
 } from '../../core/validation';
-import { useLoad } from '../../hooks';
+import { useLoad, useTransient } from '../../hooks';
 import { useSession } from '../../session';
 import { colors } from '../../theme';
 import { router } from 'expo-router';
@@ -35,7 +35,7 @@ export default function DadosPessoais() {
   const [gender, setGender] = useState<Gender | ''>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useTransient();
   const [saving, setSaving] = useState(false);
 
   // O useLoad recarrega a cada foco; preencher só uma vez evita sobrescrever o que está sendo digitado.

@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 
 import { api, messageOf, type DiaryEntry, type Role } from '../core';
+import { useTransient } from '../hooks';
 import { useSession } from '../session';
 import { Dialog } from './ui';
 
@@ -10,8 +11,8 @@ export function useEntryActions(workspaceId: string, role: Role | undefined, onC
   const { token, user, handleAuthError } = useSession();
   const [toDelete, setToDelete] = useState<DiaryEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [failure, setFailure] = useState<string | null>(null);
+  const [notice, setNotice] = useTransient();
+  const [failure, setFailure] = useTransient();
 
   const permissions = (e: DiaryEntry) => {
     const mine = e.authorId === user?.id;
