@@ -2,7 +2,7 @@
 // filtros por categoria e por autor (HU-08) e ações de editar/excluir (HU-04, HU-06, HU-07).
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../../../../components/AppHeader';
 import { EntryCard } from '../../../../components/EntryCard';
@@ -12,8 +12,9 @@ import { useEntryActions } from '../../../../components/useEntryActions';
 import { api, type DiaryCategory } from '../../../../core';
 import { CATEGORIES } from '../../../../core/diary';
 import { plural } from '../../../../core/format';
+import { useFontScale } from '../../../../fontScale';
 import { useLoad } from '../../../../hooks';
-import { colors } from '../../../../theme';
+import { colors, fonts } from '../../../../theme';
 
 type Filter = DiaryCategory | 'todas';
 const FILTERS = [{ value: 'todas' as Filter, label: 'Todas as categorias' }, ...CATEGORIES];
@@ -25,9 +26,11 @@ export default function Diario() {
     const [ws, entries] = await Promise.all([api.getWorkspace(t, id), api.listEntries(t, id)]);
     return { ws, entries };
   });
+  const { scale } = useFontScale();
   const actions = useEntryActions(id, data?.ws.role, () => void reload());
   const [filter, setFilter] = useState<Filter>('todas');
   const [author, setAuthor] = useState<string>(ALL_AUTHORS);
+  const [search, setSearch] = useState('');
 
   const entries = data?.entries ?? [];
   // Autores que aparecem nas entradas do workspace, em ordem alfabética.
@@ -39,14 +42,18 @@ export default function Diario() {
     ];
   }, [entries]);
   // HU-08: os filtros são combináveis e a lista mantém a ordem da mais recente para a mais antiga.
+  const term = search.trim().toLowerCase();
   const shown = useMemo(
     () =>
       entries.filter(
-        (e) => (filter === 'todas' || e.category === filter) && (author === ALL_AUTHORS || e.authorId === author),
+        (e) =>
+          (filter === 'todas' || e.category === filter) &&
+          (author === ALL_AUTHORS || e.authorId === author) &&
+          (!term || e.title.toLowerCase().includes(term) || e.description.toLowerCase().includes(term)),
       ),
-    [entries, filter, author],
+    [entries, filter, author, term],
   );
-  const filtered = filter !== 'todas' || author !== ALL_AUTHORS;
+  const filtered = filter !== 'todas' || author !== ALL_AUTHORS || term !== '';
 
   const newEntry = () => router.push({ pathname: '/workspace/[id]/diario/entrada', params: { id } });
 
@@ -68,6 +75,25 @@ export default function Diario() {
       <View style={styles.pad}>
         {data && entries.length > 0 ? (
           <>
+            <View style={styles.searchBox}>
+              <Feather name="search" size={20} color={colors.textMuted} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Buscar entradas..."
+                placeholderTextColor="#757575"
+                maxLength={100}
+                autoCorrect={false}
+                returnKeyType="search"
+                accessibilityLabel="Buscar entradas"
+                style={[styles.searchInput, { fontSize: Math.round(16 * scale) }]}
+              />
+              {search ? (
+                <Pressable onPress={() => setSearch('')} accessibilityRole="button" accessibilityLabel="Limpar busca" hitSlop={8}>
+                  <Feather name="x" size={20} color={colors.textMuted} />
+                </Pressable>
+              ) : null}
+            </View>
             <View style={styles.filterRow}>
               <Feather name="filter" size={22} color={colors.text} />
               <Select label="Filtrar por categoria" value={filter} options={FILTERS} onChange={setFilter} compact />
@@ -91,7 +117,7 @@ export default function Diario() {
           <Empty onNew={newEntry} />
         ) : shown.length === 0 ? (
           <T size={15} color={colors.textMuted} style={{ textAlign: 'center', marginTop: 24 }}>
-            Nenhuma entrada com esses filtros.
+            {term ? 'Nenhuma entrada encontrada para essa busca e esses filtros.' : 'Nenhuma entrada com esses filtros.'}
           </T>
         ) : (
           shown.map((e) => (
@@ -128,6 +154,18 @@ function Empty({ onNew }: { onNew: () => void }) {
 const styles = StyleSheet.create({
   intro: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 18, borderBottomWidth: 1, borderBottomColor: colors.border },
   pad: { paddingHorizontal: 22, paddingTop: 18 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#9CA3AF',
+    backgroundColor: '#F1F1F1',
+  },
+  searchInput: { flex: 1, minHeight: 48, marginLeft: 10, fontFamily: fonts.regular, color: colors.text },
   filterRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
   empty: {
     alignItems: 'center',
