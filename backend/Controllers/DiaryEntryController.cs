@@ -1,4 +1,5 @@
 using EloDeCuidado.DTOs.DiaryEntries;
+using EloDeCuidado.Models;
 using EloDeCuidado.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,20 +19,52 @@ public sealed class DiaryEntryController(IDiaryEntryService diaryEntryService) :
     /// <summary>
     /// Lista as entradas de um workspace, da mais recente para a mais antiga.
     /// </summary>
+    /// <remarks>
+    /// Os filtros são opcionais e se combinam: <c>label</c> (categoria),
+    /// <c>authorId</c> (quem registrou) e <c>search</c> (texto no título ou na
+    /// descrição, sem diferenciar maiúsculas).
+    /// </remarks>
+    /// <param name="workspaceId">Workspace consultado.</param>
+    /// <param name="label">Categoria: medication, mood, symptom, appointment, note ou other.</param>
+    /// <param name="authorId">Identificador de quem registrou a entrada.</param>
+    /// <param name="search">Texto procurado no título ou na descrição.</param>
     /// <response code="200">Entradas do workspace.</response>
+    /// <response code="400">Categoria desconhecida ou busca longa demais.</response>
     /// <response code="401">Token ausente ou inválido.</response>
     /// <response code="403">O usuário não participa deste workspace.</response>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<DiaryEntryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetByWorkspace([FromQuery] int workspaceId)
+    public async Task<IActionResult> GetByWorkspace(
+        [FromQuery] int workspaceId,
+        [FromQuery] string? label = null,
+        [FromQuery] int? authorId = null,
+        [FromQuery] string? search = null)
     {
         var userId = this.GetAuthenticatedUserId();
 
         if (userId is null)
             return Unauthorized();
 
-        var entries = await diaryEntryService.GetByWorkspaceAsync(workspaceId, userId.Value);
+        EntryLabel? parsedLabel = null;
+
+        if (!string.IsNullOrWhiteSpace(label))
+        {
+            if (!Enum.TryParse<EntryLabel>(label, ignoreCase: true, out var value) || !Enum.IsDefined(value))
+                return BadRequest(new
+                {
+                    message = $"Categoria inválida. Use uma destas: {string.Join(", ", Enum.GetNames<EntryLabel>().Select(n => n.ToLowerInvariant()))}."
+                });
+
+            parsedLabel = value;
+        }
+
+        if (search is { Length: > DiaryEntryFilter.SearchMax })
+            return BadRequest(new { message = $"A busca aceita até {DiaryEntryFilter.SearchMax} caracteres." });
+
+        var entries = await diaryEntryService.GetByWorkspaceAsync(
+            workspaceId, userId.Value, new DiaryEntryFilter(parsedLabel, authorId, search));
 
         // A mesma resposta para workspace inexistente e alheio, para não revelar
         // quais ids existem (RNF-002).
