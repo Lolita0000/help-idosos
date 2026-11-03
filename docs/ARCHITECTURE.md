@@ -198,6 +198,41 @@ de desenvolvimento, que é pública por estar versionada.
 
 ---
 
+## Metas não funcionais: disponibilidade e escalabilidade
+
+As metas originais eram **99,98% de disponibilidade (RNF-011)** e **1.000
+usuários simultâneos (RNF-012)**. Elas são incompatíveis com a implantação
+descrita acima, e a decisão do projeto é **revisá-las**, não prometer uma
+redundância que não será construída.
+
+**Por que não se sustentam.** Há um único servidor, uma única instância do
+backend e um único banco, sem réplica nem balanceador. 99,98% permite cerca de
+1h45min de parada por ano; uma reinicialização do Docker, uma atualização do
+sistema ou uma queda de energia da máquina já ultrapassa isso. Atingir essa meta
+exigiria no mínimo banco replicado, mais de uma instância da API atrás de
+balanceador e hospedagem com SLA, o que está fora do escopo e do orçamento do MVP.
+
+**Metas revisadas para o MVP**
+
+| RNF | Meta original | Meta revisada | Como se sustenta |
+|---|---|---|---|
+| RNF-011 Disponibilidade | 99,98% | **Melhor esforço, sem SLA**, durante o horário de uso e as demonstrações | Servidor único; `restart` automático dos contêineres; backup a cada 6 horas (RNF-005) limita a perda de dados |
+| RNF-012 Escalabilidade | 1.000 simultâneos | **Dezenas de usuários simultâneos** (famílias de cuidado, cada uma com poucos membros) | O uso é de baixa concorrência: poucas escritas por pessoa por dia |
+
+**O que ainda não foi medido.** Nenhum teste de carga foi executado, então
+"dezenas de usuários" é a faixa para a qual a arquitetura foi dimensionada, não
+um número verificado. Antes de afirmar um valor, é preciso medir.
+
+**Caminho de evolução, fora do MVP**
+- Hospedagem gerenciada com SLA e backup do provedor.
+- Banco com réplica e ao menos duas instâncias da API atrás de balanceador.
+- Teste de carga para fixar o limite real de simultâneos.
+
+O modo demonstração do aplicativo (dados locais, sem servidor) não depende da
+disponibilidade da API e cobre o caso em que a infraestrutura esteja fora do ar.
+
+---
+
 ## Diagrama de classes
 
 O modelo de domínio corresponde ao diagrama ER acima. As entidades são classes
