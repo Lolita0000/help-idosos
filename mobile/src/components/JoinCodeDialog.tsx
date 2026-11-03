@@ -70,6 +70,8 @@ export function JoinCodeDialog({
             error={error}
             maxLength={12}
             center
+            returnKeyType="done"
+            onSubmitEditing={() => void submit()}
           />
           <Button title="Enviar" onPress={submit} loading={loading} style={{ marginTop: 6 }} />
           <Button title="Cancelar" variant="ghost" onPress={onClose} style={{ marginTop: 12 }} />

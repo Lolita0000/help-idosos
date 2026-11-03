@@ -1,5 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { TextInput } from 'react-native';
 
 import { api, messageOf, type WorkspaceDetail } from './core';
 import { workspaceCache } from './core/workspaceCache';
@@ -99,4 +100,20 @@ export function useLoad<T>(loader: (token: string) => Promise<T>) {
   );
 
   return { data, error, loading, reload, setData };
+}
+
+/**
+ * Liga os campos de um formulário em sequência: o Enter do teclado leva ao campo
+ * seguinte e, no último, fecha o teclado (ou envia, se `onDone` for informado).
+ * `last` é o índice do último campo de texto; `next` pula campos que não recebem foco.
+ */
+export function useFieldChain(last: number, onDone?: () => void) {
+  const refs = useRef<(TextInput | null)[]>([]);
+  return (i: number, next = i + 1) => ({
+    inputRef: (el: TextInput | null) => {
+      refs.current[i] = el;
+    },
+    returnKeyType: i >= last ? ('done' as const) : ('next' as const),
+    onSubmitEditing: () => (i >= last ? onDone?.() : refs.current[next]?.focus()),
+  });
 }

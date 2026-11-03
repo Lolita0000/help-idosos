@@ -10,7 +10,7 @@ import { api, ApiError, messageOf } from '../../../../core';
 import { plural } from '../../../../core/format';
 import { validateWorkspace } from '../../../../core/validation';
 import { useFontScale } from '../../../../fontScale';
-import { useLoad, useTransient } from '../../../../hooks';
+import { useFieldChain, useLoad, useTransient } from '../../../../hooks';
 import { useSession } from '../../../../session';
 import { colors, fonts, radius, TOUCH } from '../../../../theme';
 
@@ -50,6 +50,8 @@ export default function Configuracao() {
     setSubjectName(data.ws.subjectName);
     setDescription(data.ws.description ?? '');
   }, [data]);
+
+  const chain = useFieldChain(2);
 
   const ws = data?.ws;
   const isAdmin = ws?.role === 'admin';
@@ -123,8 +125,8 @@ export default function Configuracao() {
               </View>
             ) : null}
 
-            <Field label="Nome do espaço:" value={name} onChangeText={setName} error={errors.name} maxLength={100} />
-            <Field label="Descrição: (opcional)" value={description} onChangeText={setDescription} multiline maxLength={500} />
+            <Field label="Nome do espaço:" value={name} onChangeText={setName} error={errors.name} maxLength={100} {...chain(0, 1)} />
+            <Field label="Descrição: (opcional)" value={description} onChangeText={setDescription} multiline maxLength={500} inputRef={chain(1).inputRef} />
             <Field
               label="Nome do sujeito:"
               value={subjectName}
@@ -132,6 +134,7 @@ export default function Configuracao() {
               autoCapitalize="words"
               error={errors.subjectName}
               maxLength={100}
+              {...chain(2)}
             />
 
             {notice ? <Alert tone="success" message={notice} /> : null}

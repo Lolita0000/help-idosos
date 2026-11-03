@@ -13,7 +13,7 @@ import {
   maskPhone,
   validateProfile,
 } from '../../core/validation';
-import { useLoad, useTransient } from '../../hooks';
+import { useFieldChain, useLoad, useTransient } from '../../hooks';
 import { useSession } from '../../session';
 import { colors } from '../../theme';
 import { router } from 'expo-router';
@@ -55,6 +55,8 @@ export default function DadosPessoais() {
       phone.replace(/\D/g, '') !== data.phone ||
       (displayToIso(birthDate) ?? '') !== data.birthDate ||
       gender !== data.gender);
+
+  const chain = useFieldChain(2);
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/conta'));
 
@@ -99,7 +101,7 @@ export default function DadosPessoais() {
 
       {data ? (
         <>
-          <Field label="Nome completo:" value={name} onChangeText={setName} autoCapitalize="words" error={errors.name} maxLength={256} />
+          <Field label="Nome completo:" value={name} onChangeText={setName} autoCapitalize="words" error={errors.name} maxLength={256} {...chain(0, 1)} />
           <Field label="E-mail:" value={data.email} onChangeText={() => undefined} readOnly helper="O e-mail identifica sua conta e não pode ser alterado aqui." />
           <Field
             label="Telefone: (opcional)"
@@ -108,6 +110,7 @@ export default function DadosPessoais() {
             placeholder="(61) 99999-0000"
             keyboardType="phone-pad"
             error={errors.phone}
+            {...chain(1)}
           />
           <Field
             label="Data de nascimento: (opcional)"
@@ -116,6 +119,7 @@ export default function DadosPessoais() {
             placeholder="DD/MM/AAAA"
             keyboardType="number-pad"
             error={errors.birthDate}
+            {...chain(2)}
           />
           <Select
             label="Gênero: (opcional)"

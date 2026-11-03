@@ -249,6 +249,9 @@ export function Field({
   maxLength,
   center,
   readOnly,
+  inputRef,
+  returnKeyType,
+  onSubmitEditing,
 }: {
   label?: string;
   value: string;
@@ -266,6 +269,10 @@ export function Field({
   center?: boolean;
   /** Mostra o valor sem permitir edição (ex.: e-mail que identifica a conta). */
   readOnly?: boolean;
+  inputRef?: (el: TextInput | null) => void;
+  /** "next" mostra a seta de avançar no teclado; "done" mostra o ok. Não vale em campo de várias linhas. */
+  returnKeyType?: 'next' | 'done';
+  onSubmitEditing?: () => void;
 }) {
   const [hidden, setHidden] = useState(true);
   const [focused, setFocused] = useState(false);
@@ -280,6 +287,10 @@ export function Field({
       ) : null}
       <View style={[styles.inputWrap, { borderColor, borderWidth: error || focused ? 1.5 : 1 }, multiline && { minHeight: 96 }]}>
         <TextInput
+          ref={inputRef}
+          returnKeyType={multiline ? undefined : returnKeyType}
+          onSubmitEditing={multiline ? undefined : onSubmitEditing}
+          blurOnSubmit={multiline ? undefined : returnKeyType !== 'next'}
           accessibilityLabel={label ?? placeholder}
           value={value}
           onChangeText={onChangeText}
