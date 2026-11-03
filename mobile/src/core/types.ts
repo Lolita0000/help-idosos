@@ -63,6 +63,19 @@ export interface CreateWorkspaceInput {
   description?: string;
 }
 
+/** Campos editáveis na configuração do workspace. */
+export interface UpdateWorkspaceInput {
+  name: string;
+  subjectName: string;
+  description: string;
+}
+
+/** Totais exibidos na configuração do workspace. */
+export interface WorkspaceStats {
+  memberCount: number;
+  entryCount: number;
+}
+
 /** Categorias do RF05, uma para cada valor do EntryLabel do backend. */
 export type DiaryCategory = 'medicamento' | 'humor' | 'sintoma' | 'consulta' | 'observacao' | 'outro';
 
@@ -96,6 +109,14 @@ export interface EloApi {
   listWorkspaces(token: string): Promise<WorkspaceSummary[]>;
   createWorkspace(token: string, input: CreateWorkspaceInput): Promise<WorkspaceSummary>;
   getWorkspace(token: string, workspaceId: string): Promise<WorkspaceDetail>;
+  getWorkspaceStats(token: string, workspaceId: string): Promise<WorkspaceStats>;
+  /** Só o administrador edita (RN-001). */
+  updateWorkspace(token: string, workspaceId: string, input: UpdateWorkspaceInput): Promise<WorkspaceSummary>;
+  /**
+   * Zona de Perigo (RN-012): exclui o workspace com membros, convites e entradas.
+   * Irreversível. Só o administrador.
+   */
+  deleteWorkspace(token: string, workspaceId: string): Promise<void>;
   listInvites(token: string, workspaceId: string): Promise<InviteCode[]>;
   createInvite(token: string, workspaceId: string): Promise<InviteCode>;
   deleteInvite(token: string, inviteId: string): Promise<void>;

@@ -48,7 +48,7 @@ export default function CriarWorkspace() {
         Defina o nome, a descrição e o sujeito que será acompanhado.
       </T>
 
-      <Field label="Nome do espaço:" value={name} onChangeText={setName} placeholder="Ex: Cuidados com a mamãe" error={errors.name} maxLength={120} />
+      <Field label="Nome do espaço:" value={name} onChangeText={setName} placeholder="Ex: Cuidados com a mamãe" error={errors.name} maxLength={100} />
       <Field label="Descrição: (opcional)" value={description} onChangeText={setDescription} placeholder="Descreva o objetivo do espaço criado" multiline maxLength={500} />
       <Field
         label="Nome do sujeito:"
@@ -58,7 +58,7 @@ export default function CriarWorkspace() {
         autoCapitalize="words"
         error={errors.subjectName}
         helper="O sujeito não recebe convite automático. Para dar acesso a ele, gere um código de convite depois."
-        maxLength={256}
+        maxLength={100}
       />
 
       {failure ? <Alert message={failure} /> : null}

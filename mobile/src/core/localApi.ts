@@ -20,7 +20,9 @@ import type {
   Role,
   Session,
   User,
+  UpdateWorkspaceInput,
   WorkspaceDetail,
+  WorkspaceStats,
   WorkspaceSummary,
 } from './types';
 import { isValidEmail, normalizeCode, passwordError, validateEntry, validateWorkspace } from './validation';
@@ -312,6 +314,43 @@ export const localApi: EloApi = {
       .sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
     const detail: WorkspaceDetail = { ...summary(db, ws, me.role), members };
     return detail;
+  },
+
+  async getWorkspaceStats(token, workspaceId): Promise<WorkspaceStats> {
+    const db = await load();
+    requireMember(db, requireUser(db, token).id, workspaceId);
+    return {
+      memberCount: db.members.filter((m) => m.workspaceId === workspaceId).length,
+      entryCount: db.entries.filter((e) => e.workspaceId === workspaceId).length,
+    };
+  },
+
+  async updateWorkspace(token, workspaceId, input: UpdateWorkspaceInput) {
+    const db = await load();
+    const me = requireMember(db, requireUser(db, token).id, workspaceId);
+    if (me.role !== 'admin') throw new ApiError('FORBIDDEN', 'Apenas o administrador edita o workspace.');
+    const fields = validateWorkspace(input.name, input.subjectName);
+    if (Object.keys(fields).length) throw new ApiError('VALIDATION', 'Revise os campos.', fields);
+    const ws = db.workspaces.find((w) => w.id === workspaceId);
+    if (!ws) throw new ApiError('NOT_FOUND', 'Workspace não encontrado.');
+    ws.name = input.name.trim();
+    ws.subjectName = input.subjectName.trim();
+    ws.description = input.description.trim() || null;
+    await save(db);
+    return summary(db, ws, me.role);
+  },
+
+  // RN-012: a exclusão leva membros, convites, entradas e a auditoria do workspace.
+  async deleteWorkspace(token, workspaceId) {
+    const db = await load();
+    const me = requireMember(db, requireUser(db, token).id, workspaceId);
+    if (me.role !== 'admin') throw new ApiError('FORBIDDEN', 'Apenas o administrador exclui o workspace.');
+    db.workspaces = db.workspaces.filter((w) => w.id !== workspaceId);
+    db.members = db.members.filter((m) => m.workspaceId !== workspaceId);
+    db.invites = db.invites.filter((i) => i.workspaceId !== workspaceId);
+    db.entries = db.entries.filter((e) => e.workspaceId !== workspaceId);
+    db.audit = db.audit.filter((a) => a.workspaceId !== workspaceId);
+    await save(db);
   },
 
   async listInvites(token, workspaceId) {

@@ -111,13 +111,13 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
             return null;
 
         if (request.Name is not null)
-            workspace.Name = request.Name;
+            workspace.Name = request.Name.Trim();
 
         if (request.Description is not null)
-            workspace.Description = request.Description;
+            workspace.Description = request.Description.Trim();
 
         if (request.SubjectName is not null)
-            workspace.SubjectName = request.SubjectName;
+            workspace.SubjectName = request.SubjectName.Trim();
 
         workspace.UpdatedAt = DateTime.UtcNow;
 
@@ -138,6 +138,17 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
         await db.SaveChangesAsync();
 
         return true;
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkspaceStatsResponse?> GetStatsAsync(int id)
+    {
+        if (!await db.Workspaces.AnyAsync(w => w.Id == id))
+            return null;
+
+        return new WorkspaceStatsResponse(
+            await db.WorkspaceMembers.CountAsync(m => m.WorkspaceId == id),
+            await db.DiaryEntries.CountAsync(e => e.WorkspaceId == id));
     }
 
     /// <inheritdoc />

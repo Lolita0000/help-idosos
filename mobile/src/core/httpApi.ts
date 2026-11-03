@@ -8,6 +8,7 @@
 //   GET  /api/diary-entries?workspaceId= · POST /api/diary-entries · GET /api/diary-entries/{id}
 //   PATCH /api/diary-entries/{id} · DELETE /api/diary-entries/{id}
 // Conta (v1.0): DELETE /api/users/{id}/delete
+// Configuração (v1.0): GET /api/workspaces/{id}/stats · PATCH /api/workspaces/{id} · DELETE /api/workspaces/{id}
 
 import { ApiError, type ErrorCode } from './errors';
 import type {
@@ -23,6 +24,7 @@ import type {
   Session,
   User,
   WorkspaceDetail,
+  WorkspaceStats,
   WorkspaceSummary,
 } from './types';
 
@@ -295,6 +297,24 @@ export function createHttpApi(baseUrl: string): EloApi {
           })),
       };
       return detail;
+    },
+
+    async getWorkspaceStats(token, id) {
+      return call<WorkspaceStats>('GET', `/api/workspaces/${id}/stats`, token);
+    },
+
+    async updateWorkspace(token, id, input) {
+      const w = await call<WorkspaceDto>('PATCH', `/api/workspaces/${id}`, token, {
+        name: input.name.trim(),
+        subjectName: input.subjectName.trim(),
+        description: input.description.trim(),
+      });
+      // A resposta da edição não traz o papel; só o administrador chega aqui.
+      return toWorkspace({ ...w, myRole: 'admin' });
+    },
+
+    async deleteWorkspace(token, id) {
+      await call<void>('DELETE', `/api/workspaces/${id}`, token);
     },
 
     async listInvites(token, workspaceId) {

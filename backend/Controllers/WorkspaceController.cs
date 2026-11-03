@@ -148,11 +148,13 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
     /// Atualiza os dados de um workspace existente. Apenas o administrador.
     /// </summary>
     /// <response code="200">Workspace atualizado.</response>
+    /// <response code="400">Nome ou sujeito em branco, ou texto acima do limite.</response>
     /// <response code="401">Token ausente ou inválido.</response>
     /// <response code="403">O usuário não administra este workspace (ou ele não existe).</response>
     [Authorize]
     [HttpPatch("{id:int}")]
     [ProducesResponseType(typeof(WorkspaceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateWorkspaceRequest request)
     {
@@ -166,6 +168,14 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
         if (!await workspaceService.IsAdminAsync(id, userId.Value))
             return Forbid();
 
+        // Nome e sujeito são obrigatórios na criação; permitir esvaziá-los na
+        // edição deixaria o workspace sem identificação. Os limites espelham as
+        // colunas, onde exceder viraria erro 500 em vez de mensagem clara.
+        var invalid = ValidateUpdate(request);
+
+        if (invalid is not null)
+            return BadRequest(new { error = invalid });
+
         var workspace = await workspaceService.UpdateAsync(id, request);
 
         if (workspace is null)
@@ -175,12 +185,42 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
     }
 
     /// <summary>
+    /// Totais do workspace (participantes e entradas), para a tela de
+    /// configuração. Apenas para quem participa dele.
+    /// </summary>
+    /// <response code="200">Totais do workspace.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    /// <response code="403">O usuário não participa deste workspace (ou ele não existe).</response>
+    [Authorize]
+    [HttpGet("{id:int}/stats")]
+    [ProducesResponseType(typeof(WorkspaceStatsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetStats(int id)
+    {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        if (!await workspaceService.IsMemberAsync(id, userId.Value))
+            return Forbid();
+
+        var stats = await workspaceService.GetStatsAsync(id);
+
+        return stats is null ? NotFound() : Ok(stats);
+    }
+
+    /// <summary>
     /// Deleta um workspace pelo ID. Apenas o administrador.
     /// </summary>
     /// <remarks>
-    /// A confirmação em duas etapas e as regras de retenção das entradas do
-    /// diário são tratadas na #65 (Zona de Perigo, RN-012). Aqui a rota apenas
-    /// deixa de estar aberta.
+    /// <b>Irreversível.</b> Membros, convites, entradas do diário e a trilha de
+    /// auditoria do workspace saem junto, em cascata (RN-012). As contas dos
+    /// participantes permanecem. A confirmação em duas etapas é responsabilidade
+    /// do cliente.
+    ///
+    /// A trilha de auditoria sai com o workspace porque ela pertence a ele:
+    /// não há onde registrar a exclusão sem manter dados do que foi apagado.
     /// </remarks>
     /// <response code="204">Workspace excluído.</response>
     /// <response code="401">Token ausente ou inválido.</response>
@@ -202,5 +242,28 @@ public sealed class WorkspaceController(IWorkspaceService workspaceService) : Co
         var deleted = await workspaceService.DeleteAsync(id);
 
         return !deleted ? NotFound() : NoContent();
+    }
+
+    private const int NameMax = 100;
+    private const int DescriptionMax = 500;
+
+    private static string? ValidateUpdate(UpdateWorkspaceRequest request)
+    {
+        if (request.Name is not null && string.IsNullOrWhiteSpace(request.Name))
+            return "Informe o nome do espaço.";
+
+        if (request.SubjectName is not null && string.IsNullOrWhiteSpace(request.SubjectName))
+            return "O nome do sujeito acompanhado é obrigatório.";
+
+        if (request.Name?.Trim().Length > NameMax)
+            return $"O nome do espaço aceita até {NameMax} caracteres.";
+
+        if (request.SubjectName?.Trim().Length > NameMax)
+            return $"O nome do sujeito aceita até {NameMax} caracteres.";
+
+        if (request.Description?.Trim().Length > DescriptionMax)
+            return $"A descrição aceita até {DescriptionMax} caracteres.";
+
+        return null;
     }
 }
