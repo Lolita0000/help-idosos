@@ -30,5 +30,28 @@ services:
       db:
         condition: service_healthy
 
+  # Backup automático do banco (RNF-005). Roda enquanto o Compose estiver de pé
+  # e grava em ./backups no host, fora do volume do banco: backup guardado
+  # dentro do próprio volume se perderia junto com ele.
+  backup:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      BACKUP_KEEP: ${BACKUP_KEEP:-7}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-21600}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    # O primeiro backup sai assim que o banco responde, e não só após o primeiro
+    # intervalo: subir o ambiente e ficar horas sem cópia seria o pior momento.
+    entrypoint: ["/bin/sh", "-c", "while true; do sh /usr/local/bin/backup.sh || echo 'falha no backup'; sleep \"$$BACKUP_INTERVAL_SECONDS\"; done"]
+
 volumes:
   db_data:

@@ -7,3 +7,7 @@ package-lock.json
 
 # Dependencias de Node (app mobile e ferramentas)
 node_modules/
+
+# Backups do banco (RNF-005). Os arquivos sao gerados localmente e nao
+# pertencem ao repositorio: contem dados reais.
+backups/
