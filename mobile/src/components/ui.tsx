@@ -452,22 +452,28 @@ export function Dialog({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel} statusBarTranslucent>
       <View style={styles.overlay}>
         <View style={styles.dialog} accessibilityViewIsModal>
-          {icon ? (
-            <Feather name={icon} size={22} color={danger ? colors.danger : colors.primary} style={{ alignSelf: 'center', marginBottom: 8 }} />
-          ) : null}
-          <T w="semibold" size={18} style={{ textAlign: 'center' }}>
+          {icon ? <Feather name={icon} size={22} color={colors.primary} style={{ alignSelf: 'center', marginBottom: 10 }} /> : null}
+          <T w="semibold" size={15} color={danger ? colors.danger : colors.text} style={{ textAlign: 'center' }}>
             {title}
           </T>
           {message ? (
-            <T size={15} color={colors.textSoft} style={{ textAlign: 'center', marginTop: 10 }}>
+            <T w="medium" size={12} color="rgba(0,0,0,0.75)" style={{ textAlign: 'center', marginTop: 12 }}>
               {message}
             </T>
           ) : null}
           {children}
-          <View style={[styles.row, { marginTop: 20, gap: 12 }]}>
-            <Button title={cancel} variant="outline" onPress={onCancel} style={{ flex: 1 }} small />
+          <View style={[styles.row, { marginTop: 22, gap: 12 }]}>
+            <Button title={cancel} variant="outline" onPress={onCancel} style={styles.dialogBtn} small />
             {confirm ? (
-              <Button title={confirm} variant={danger ? 'danger' : 'primary'} onPress={onConfirm} disabled={confirmDisabled} loading={loading} style={{ flex: 1 }} small />
+              <Button
+                title={confirm}
+                variant={danger ? 'danger' : 'primary'}
+                onPress={onConfirm}
+                disabled={confirmDisabled}
+                loading={loading}
+                style={styles.dialogBtn}
+                small
+              />
             ) : null}
           </View>
         </View>
@@ -484,6 +490,26 @@ export function BackLink({ label = 'Voltar', onPress }: { label?: string; onPres
         {label}
       </T>
     </Pressable>
+  );
+}
+
+/** Cabeçalho das telas internas do Figma: seta de voltar e título ao lado. */
+export function ScreenHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <View style={styles.row}>
+      <Pressable
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        hitSlop={8}
+        style={{ width: TOUCH, height: TOUCH, alignItems: 'flex-start', justifyContent: 'center' }}
+      >
+        <Feather name="chevron-left" size={32} color={colors.text} />
+      </Pressable>
+      <T w="semibold" size={20} style={{ marginLeft: 6, flex: 1 }} accessibilityRole="header">
+        {title}
+      </T>
+    </View>
   );
 }
 
@@ -547,17 +573,19 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: colors.overlay,
+    backgroundColor: 'rgba(217,217,217,0.75)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
   dialog: {
     width: '100%',
-    maxWidth: 360,
+    maxWidth: 320,
     backgroundColor: colors.white,
-    borderRadius: radius.lg,
-    padding: 22,
+    borderRadius: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
   },
+  dialogBtn: { flex: 1, borderRadius: 10, borderWidth: 1 },
   back: { flexDirection: 'row', alignItems: 'center', minHeight: TOUCH, alignSelf: 'flex-start' },
 });
