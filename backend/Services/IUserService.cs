@@ -29,6 +29,20 @@ public interface IUserService
     Task<bool> DeleteAsync(int id);
 
     /// <summary>
+    /// Exclui a conta e os dados pessoais do titular, de forma irreversível
+    /// (HU-05, RN-011).
+    /// </summary>
+    /// <remarks>
+    /// As entradas do diário e os registros de auditoria permanecem, com a
+    /// autoria anonimizada (RN-014): o conteúdo pertence ao histórico de saúde
+    /// de outra pessoa, que não pediu exclusão.
+    ///
+    /// Recusa quando o titular administra workspace que ainda tem outros
+    /// participantes (RN-012), para o espaço não ficar sem administrador.
+    /// </remarks>
+    Task<DeleteAccountResult> DeleteAccountAsync(int id);
+
+    /// <summary>
     /// Busca a entidade de usuário pelo e-mail. Usado na autenticação, por
     /// retornar o hash da senha, que não é exposto no <see cref="UserResponse"/>.
     /// </summary>

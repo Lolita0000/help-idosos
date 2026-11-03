@@ -120,13 +120,26 @@ public sealed class UserController(IUserService userService) : ControllerBase
     }
 
     /// <summary>
-    /// Exclui a própria conta.
+    /// Exclui a própria conta e os dados pessoais, de forma irreversível
+    /// (HU-05, RN-011).
     /// </summary>
-    /// <response code="204">Conta excluída.</response>
+    /// <remarks>
+    /// As entradas do diário e os registros de auditoria permanecem com a
+    /// autoria anonimizada (RN-014): o conteúdo pertence ao histórico de saúde
+    /// dos demais participantes, que não pediram exclusão.
+    ///
+    /// Depois da exclusão o token deixa de valer, porque a validação confere se
+    /// o usuário ainda existe.
+    /// </remarks>
+    /// <response code="204">Conta e dados pessoais excluídos.</response>
     /// <response code="403">O id informado não é o do usuário autenticado.</response>
+    /// <response code="409">
+    /// O titular administra workspace com outros participantes ativos (RN-012).
+    /// </response>
     [HttpDelete("{id:int}/delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(int id)
     {
         var userId = this.GetAuthenticatedUserId();
@@ -138,11 +151,19 @@ public sealed class UserController(IUserService userService) : ControllerBase
         if (id != userId.Value)
             return Forbid();
 
-        var deleted = await userService.DeleteAsync(id);
+        var result = await userService.DeleteAccountAsync(id);
 
-        if (!deleted)
-            return NotFound();
-
-        return NoContent();
+        return result.Status switch
+        {
+            DeleteAccountStatus.Deleted => NoContent(),
+            DeleteAccountStatus.NotFound => NotFound(),
+            _ => Conflict(new
+            {
+                error = "Você administra workspaces com outros membros ativos. "
+                        + "Transfira a administração ou remova os membros antes de excluir sua conta.",
+                code = "ADMIN_HAS_MEMBERS",
+                workspaces = result.BlockingWorkspaces,
+            }),
+        };
     }
 }
