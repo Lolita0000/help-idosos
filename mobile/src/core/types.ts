@@ -134,6 +134,10 @@ export interface EloApi {
    * Irreversível. Só o administrador.
    */
   deleteWorkspace(token: string, workspaceId: string): Promise<void>;
+  /** Tira um membro comum do workspace; a conta e as entradas dele permanecem. Só o administrador. */
+  removeMember(token: string, workspaceId: string, userId: string): Promise<void>;
+  /** Passa a administração: a pessoa vira administradora e quem passou vira membro comum. */
+  transferAdmin(token: string, workspaceId: string, userId: string): Promise<void>;
   listInvites(token: string, workspaceId: string): Promise<InviteCode[]>;
   createInvite(token: string, workspaceId: string): Promise<InviteCode>;
   deleteInvite(token: string, inviteId: string): Promise<void>;

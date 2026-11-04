@@ -385,6 +385,32 @@ export const localApi: EloApi = {
     await save(db);
   },
 
+  async removeMember(token, workspaceId, userId) {
+    const db = await load();
+    const me = requireMember(db, requireUser(db, token).id, workspaceId);
+    if (me.role !== 'admin') throw new ApiError('FORBIDDEN', 'Apenas o administrador remove membros.');
+    if (userId === me.userId)
+      throw new ApiError('VALIDATION', 'Você é o administrador deste workspace e não pode se remover. Passe a administração para outra pessoa primeiro.');
+    const target = db.members.find((m) => m.workspaceId === workspaceId && m.userId === userId);
+    if (!target) throw new ApiError('NOT_FOUND', 'Essa pessoa não participa deste workspace.');
+    if (target.role === 'admin') throw new ApiError('VALIDATION', 'Um administrador não pode ser removido. Passe a administração antes.');
+    db.members = db.members.filter((m) => m !== target);
+    await save(db);
+  },
+
+  async transferAdmin(token, workspaceId, userId) {
+    const db = await load();
+    const me = requireMember(db, requireUser(db, token).id, workspaceId);
+    if (me.role !== 'admin') throw new ApiError('FORBIDDEN', 'Apenas o administrador passa a administração.');
+    if (userId === me.userId) throw new ApiError('VALIDATION', 'Você já é o administrador deste workspace.');
+    const target = db.members.find((m) => m.workspaceId === workspaceId && m.userId === userId);
+    if (!target) throw new ApiError('NOT_FOUND', 'Essa pessoa não participa deste workspace.');
+    if (target.role === 'admin') throw new ApiError('VALIDATION', 'Essa pessoa já é administradora deste workspace.');
+    target.role = 'admin';
+    me.role = 'member';
+    await save(db);
+  },
+
   async listInvites(token, workspaceId) {
     const db = await load();
     const user = requireUser(db, token);

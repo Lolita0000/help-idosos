@@ -13,7 +13,7 @@ import { colors } from '../../../../theme';
 
 export default function Equipe() {
   const { id, aba } = useLocalSearchParams<{ id: string; aba?: string }>();
-  const { ws, error, loading } = useWorkspace(id);
+  const { ws, error, loading, reload } = useWorkspace(id);
   const [tab, setTab] = useState<TeamTab>(aba === 'convites' ? 'convites' : 'membros');
 
   // Quem chega de fora (menu lateral, atalhos) escolhe a aba pelo parâmetro.
@@ -41,7 +41,7 @@ export default function Equipe() {
           ) : tab === 'convites' ? (
             <ConvitesTab ws={ws} />
           ) : (
-            <MembrosTab ws={ws} onInvite={() => selectTab('convites')} />
+            <MembrosTab ws={ws} onInvite={() => selectTab('convites')} onChanged={reload} />
           )}
         </FadeIn>
       </ScrollView>

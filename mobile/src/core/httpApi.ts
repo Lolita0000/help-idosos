@@ -352,6 +352,14 @@ export function createHttpApi(baseUrl: string): EloApi {
       await call<void>('DELETE', `/api/workspaces/${id}`, token);
     },
 
+    async removeMember(token, workspaceId, userId) {
+      await call<void>('DELETE', `/api/workspaces/${workspaceId}/members/${userId}`, token);
+    },
+
+    async transferAdmin(token, workspaceId, userId) {
+      await call<void>('POST', `/api/workspaces/${workspaceId}/members/${userId}/transfer-admin`, token);
+    },
+
     async listInvites(token, workspaceId) {
       const list = await call<InviteDto[]>('GET', `/api/invite-code?workspaceId=${encodeURIComponent(workspaceId)}`, token);
       return list.map(toInvite);

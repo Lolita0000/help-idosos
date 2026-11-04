@@ -57,8 +57,10 @@ vínculos com workspaces. A sessão é encerrada e o token deixa de valer no ato
 
 - Se o titular **administra um workspace que ainda tem outros participantes**,
   a exclusão é **recusada** (erro `ADMIN_HAS_MEMBERS`) e o app lista os
-  workspaces. Ele deve transferir a administração ou remover os membros antes.
-  Isso evita um workspace sem administrador e um histórico de saúde inacessível.
+  workspaces. Ele deve transferir a administração ou remover os membros antes,
+  ambos em **Membros**: "Tornar administrador" troca os papéis na mesma
+  operação, e "Remover" tira um membro comum sem apagar a conta nem as entradas
+  dele. As duas ações ficam na auditoria (RN-010). Isso evita um workspace sem administrador e um histórico de saúde inacessível.
 - Se o titular é o **único participante**, o workspace é excluído junto, com
   entradas, convites e auditoria. Ninguém mais depende dele.
 - Se o titular é **membro comum**, apenas o vínculo é removido.
