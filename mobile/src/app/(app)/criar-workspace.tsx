@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { Alert, BackLink, Button, Field, Screen, T } from '../../components/ui';
 import { api, ApiError, messageOf } from '../../core';
 import { validateWorkspace } from '../../core/validation';
+import { useFieldChain } from '../../hooks';
 import { useSession } from '../../session';
 import { colors } from '../../theme';
 
@@ -17,6 +18,8 @@ export default function CriarWorkspace() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const chain = useFieldChain(2);
 
   // Cenário 5: cancelar não salva nada.
   const cancel = () => (router.canGoBack() ? router.back() : router.replace('/workspaces'));
@@ -48,8 +51,8 @@ export default function CriarWorkspace() {
         Defina o nome, a descrição e o sujeito que será acompanhado.
       </T>
 
-      <Field label="Nome do espaço:" value={name} onChangeText={setName} placeholder="Ex: Cuidados com a mamãe" error={errors.name} maxLength={120} />
-      <Field label="Descrição: (opcional)" value={description} onChangeText={setDescription} placeholder="Descreva o objetivo do espaço criado" multiline maxLength={500} />
+      <Field label="Nome do espaço:" value={name} onChangeText={setName} placeholder="Ex: Cuidados com a mamãe" error={errors.name} maxLength={100} {...chain(0, 1)} />
+      <Field label="Descrição: (opcional)" value={description} onChangeText={setDescription} placeholder="Descreva o objetivo do espaço criado" multiline maxLength={500} inputRef={chain(1).inputRef} />
       <Field
         label="Nome do sujeito:"
         value={subjectName}
@@ -58,7 +61,8 @@ export default function CriarWorkspace() {
         autoCapitalize="words"
         error={errors.subjectName}
         helper="O sujeito não recebe convite automático. Para dar acesso a ele, gere um código de convite depois."
-        maxLength={256}
+        maxLength={100}
+        {...chain(2)}
       />
 
       {failure ? <Alert message={failure} /> : null}

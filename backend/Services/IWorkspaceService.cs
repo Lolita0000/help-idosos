@@ -50,9 +50,19 @@ public interface IWorkspaceService
     Task<WorkspaceResponse?> UpdateAsync(int id, UpdateWorkspaceRequest request);
 
     /// <summary>
-    /// Deleta um workspace pelo ID.
+    /// Deleta um workspace pelo ID, com tudo que pertence a ele.
     /// </summary>
+    /// <remarks>
+    /// Membros, convites, entradas e a trilha de auditoria do workspace saem
+    /// junto, em cascata (RN-012). As contas dos participantes não são afetadas.
+    /// </remarks>
     Task<bool> DeleteAsync(int id);
+
+    /// <summary>
+    /// Totais do workspace para a tela de configuração, ou <c>null</c> se ele
+    /// não existir.
+    /// </summary>
+    Task<WorkspaceStatsResponse?> GetStatsAsync(int id);
 
     /// <summary>
     /// Indica se o usuário participa do workspace informado.

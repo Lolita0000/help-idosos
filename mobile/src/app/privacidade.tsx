@@ -4,7 +4,7 @@ import { LegalPage } from '../components/LegalPage';
 export default function Privacidade() {
   return (
     <LegalPage
-      title="Política de Privacidade"
+      title="Política de privacidade"
       updated="15 de fevereiro de 2026"
       sections={[
         {

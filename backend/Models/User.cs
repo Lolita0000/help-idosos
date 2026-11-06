@@ -17,6 +17,16 @@ public sealed class User
     [Required, MaxLength(500)]
     public required string PasswordHash { get; set; }
 
+    /// <summary>Somente dígitos, com DDD (10 ou 11). Opcional.</summary>
+    [MaxLength(11)]
+    public string? Phone { get; set; }
+
+    public DateOnly? BirthDate { get; set; }
+
+    /// <summary>Um dos valores de <c>ProfileRules.Genders</c>. Opcional.</summary>
+    [MaxLength(30)]
+    public string? Gender { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

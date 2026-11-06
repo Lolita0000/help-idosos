@@ -1,123 +1,174 @@
 // RNF-004 — Acessibilidade (Figma: acessibilidade, acessibilidade-p, acessibilidade-g).
-// A escolha vale na hora para todas as telas e fica salva no aparelho.
+// A pessoa escolhe o tamanho, vê a prévia na hora e só aplica ao tocar em "Salvar alterações".
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { BackLink, Feather, Screen, T } from '../../components/ui';
-import { FONT_SIZES, useFontScale } from '../../fontScale';
-import { colors, radius } from '../../theme';
+import { Alert, Screen, ScreenHeader, T } from '../../components/ui';
+import { FONT_SIZES, useFontScale, type FontSize } from '../../fontScale';
+import { colors } from '../../theme';
+
+const SOFT_BORDER = 'rgba(0,0,0,0.3)';
+const BODY = 'rgba(0,0,0,0.7)';
 
 export default function Acessibilidade() {
   const { size, scale, setSize } = useFontScale();
+  const [draft, setDraft] = useState<FontSize>(size);
+  const [saved, setSaved] = useState(false);
+
+  // A prévia usa a escala do rascunho; T já multiplica pela escala salva, então compensa aqui.
+  const previewScale = (FONT_SIZES.find((f) => f.value === draft)?.scale ?? 1) / scale;
+
+  async function save() {
+    await setSize(draft);
+    setSaved(true);
+  }
 
   return (
     <Screen contentStyle={styles.page}>
-      <BackLink onPress={() => (router.canGoBack() ? router.back() : router.replace('/conta'))} />
-      <T w="semibold" size={26} style={{ marginTop: 8 }} accessibilityRole="header">
-        Acessibilidade
-      </T>
+      <ScreenHeader title="Acessibilidade" onBack={() => (router.canGoBack() ? router.back() : router.replace('/conta'))} />
 
       <View style={styles.intro}>
         <View style={styles.introIcon}>
-          <Feather name="type" size={22} color={colors.primary} />
+          <Ionicons name="accessibility-outline" size={34} color={colors.primary} />
         </View>
-        <View style={{ flex: 1, marginLeft: 14 }}>
-          <T w="semibold" size={17}>
+        <View style={{ flex: 1, marginLeft: 20 }}>
+          <T w="semibold" size={20}>
             Ajuste o tamanho da fonte
           </T>
-          <T size={14} color={colors.textMuted} style={{ marginTop: 4 }}>
-            Escolha o tamanho ideal para facilitar sua leitura. A alteração vale para todas as telas do aplicativo.
+          <T w="medium" size={12} color={BODY} style={{ marginTop: 4 }}>
+            Escolha o tamanho ideal para facilitar sua leitura em todo o sistema.
           </T>
         </View>
       </View>
 
-      <T w="semibold" size={17} style={{ marginTop: 22, marginBottom: 10 }}>
+      <T w="semibold" size={15} style={{ marginTop: 32 }}>
         Tamanho da fonte
       </T>
-      <View accessibilityRole="radiogroup" style={{ gap: 10 }}>
+      <T w="medium" size={12} color={BODY} style={{ marginTop: 6 }}>
+        A alteração será aplicada em todas as telas e textos do sistema.
+      </T>
+
+      <View accessibilityRole="radiogroup" style={styles.options}>
         {FONT_SIZES.map((f) => {
-          const active = f.value === size;
+          const active = f.value === draft;
           return (
             <Pressable
               key={f.value}
-              onPress={() => void setSize(f.value)}
+              onPress={() => {
+                setDraft(f.value);
+                setSaved(false);
+              }}
               accessibilityRole="radio"
               accessibilityState={{ checked: active }}
               accessibilityLabel={`Fonte ${f.label}`}
               style={[styles.option, active && styles.optionActive]}
             >
-              <View style={styles.sample}>
-                {/* "Aa" mostra o tamanho fixo de cada opção, sem depender da escolha atual. */}
-                <T w="semibold" size={(18 * f.scale) / scale} color={active ? colors.primary : colors.text} allowFontScaling={false}>
-                  Aa
-                </T>
+              {/* "Aa" mostra o tamanho fixo de cada opção, sem depender da escolha atual. */}
+              <T w="semibold" size={(12 * f.scale) / scale} color={active ? colors.primary : colors.text}>
+                Aa
+              </T>
+              <T w="medium" size={10} color={active ? colors.primary : colors.text} style={{ marginTop: 6, textAlign: 'center' }}>
+                {f.label}
+              </T>
+              <T w="medium" size={10} color={BODY} style={{ marginTop: 6, textAlign: 'center' }}>
+                {f.hint}
+              </T>
+              <View style={{ flex: 1 }} />
+              <View style={[styles.radio, active && { borderColor: colors.primary }]}>
+                {active ? <View style={styles.radioDot} /> : null}
               </View>
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <T w="semibold" size={16} color={active ? colors.primary : colors.text}>
-                  {f.label}
-                </T>
-                <T size={13} color={colors.textMuted}>
-                  {f.hint}
-                </T>
-              </View>
-              <Feather name={active ? 'check-circle' : 'circle'} size={22} color={active ? colors.primary : '#9CA3AF'} />
             </Pressable>
           );
         })}
       </View>
 
-      <T w="semibold" size={17} style={{ marginTop: 24, marginBottom: 10 }}>
+      <T w="semibold" size={15} style={{ marginTop: 28 }}>
         Visualização
       </T>
+      <T w="medium" size={12} color={BODY} style={{ marginTop: 6 }}>
+        Veja um exemplo de como os textos serão exibidos.
+      </T>
       <View style={styles.preview} accessibilityLiveRegion="polite">
-        <T w="semibold" size={18}>
+        <T w="semibold" size={15 * previewScale}>
           Título de exemplo
         </T>
-        <T size={15} color={colors.textSoft} style={{ marginTop: 6 }}>
-          Este é um exemplo de como os textos são exibidos no aplicativo. Ajuste o tamanho até encontrar a opção mais
-          confortável para você.
+        <T w="medium" size={12 * previewScale} color={BODY} style={{ marginTop: 8 }}>
+          Este é um exemplo de como os textos serão exibidos em todo o sistema.
+        </T>
+        <T w="medium" size={12 * previewScale} color={BODY} style={{ marginTop: 10 }}>
+          Ajuste o tamanho até encontrar a opção mais confortável para você.
         </T>
       </View>
+
+      {saved ? (
+        <View style={{ marginTop: 16 }}>
+          <Alert tone="success" message="Tamanho da fonte salvo." />
+        </View>
+      ) : null}
+
+      <Pressable
+        onPress={() => void save()}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.save, pressed && { opacity: 0.85 }]}
+      >
+        <T w="semibold" size={18} color={colors.white}>
+          Salvar alterações
+        </T>
+      </Pressable>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 32 },
-  intro: {
-    flexDirection: 'row',
-    marginTop: 16,
-    padding: 16,
-    borderRadius: radius.md,
-    backgroundColor: colors.primarySoft,
-  },
+  page: { paddingHorizontal: 30, paddingTop: 12, paddingBottom: 32 },
+  intro: { flexDirection: 'row', alignItems: 'center', marginTop: 28 },
   introIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.white,
+    width: 73,
+    height: 73,
+    borderRadius: 37,
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  options: { flexDirection: 'row', gap: 12, marginTop: 24 },
   option: {
-    flexDirection: 'row',
+    flex: 1,
+    minHeight: 108,
     alignItems: 'center',
-    minHeight: 64,
-    padding: 12,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: '#C9CED6',
-  },
-  optionActive: { borderColor: colors.primary, borderWidth: 2, backgroundColor: colors.primarySoft },
-  sample: {
-    width: 48,
-    height: 48,
+    paddingHorizontal: 5,
+    paddingTop: 12,
+    paddingBottom: 10,
     borderRadius: 10,
-    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: SOFT_BORDER,
+  },
+  optionActive: { borderColor: colors.primary },
+  radio: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: '#6B7280',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  preview: { padding: 16, borderRadius: radius.md, borderWidth: 1, borderColor: '#C9CED6' },
+  radioDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.primary },
+  preview: {
+    marginTop: 22,
+    minHeight: 194,
+    padding: 17,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: SOFT_BORDER,
+  },
+  save: {
+    marginTop: 24,
+    minHeight: 48,
+    borderRadius: 15,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

@@ -8,6 +8,7 @@ import { Alert, BackLink, Button, Field, Screen, T } from '../../../../../compon
 import { api, ApiError, messageOf, type DiaryCategory } from '../../../../../core';
 import { CATEGORIES } from '../../../../../core/diary';
 import { ENTRY_DESCRIPTION_MAX, ENTRY_TITLE_MAX, validateEntry } from '../../../../../core/validation';
+import { useFieldChain } from '../../../../../hooks';
 import { useSession } from '../../../../../session';
 import { colors, radius } from '../../../../../theme';
 
@@ -46,6 +47,8 @@ export default function Entrada() {
       set(v);
       setErrors(({ [field]: _omit, ...rest }) => rest);
     };
+
+  const chain = useFieldChain(1);
 
   const back = () => {
     if (router.canGoBack()) router.back();
@@ -94,6 +97,7 @@ export default function Entrada() {
             placeholder="Ex: Medicação da manhã tomada"
             error={errors.title}
             maxLength={ENTRY_TITLE_MAX}
+            {...chain(0, 1)}
           />
           <Select
             label="Categoria"
@@ -111,6 +115,7 @@ export default function Entrada() {
             error={errors.description}
             maxLength={ENTRY_DESCRIPTION_MAX}
             multiline
+            inputRef={chain(1).inputRef}
           />
 
           <View style={styles.actions}>

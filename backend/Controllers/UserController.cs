@@ -18,6 +18,55 @@ namespace EloDeCuidado.Controllers;
 public sealed class UserController(IUserService userService) : ControllerBase
 {
     /// <summary>
+    /// Dados pessoais da conta autenticada (perfil).
+    /// </summary>
+    /// <response code="200">Nome, e-mail, telefone, nascimento e gênero.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(ProfileResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProfile()
+    {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var profile = await userService.GetProfileAsync(userId.Value);
+
+        return profile is null ? NotFound() : Ok(profile);
+    }
+
+    /// <summary>
+    /// Altera os dados pessoais da conta autenticada. Campos omitidos não mudam.
+    /// </summary>
+    /// <remarks>
+    /// O e-mail e a senha não são alterados aqui. O telefone é aceito com ou sem
+    /// máscara e guardado só com dígitos.
+    /// </remarks>
+    /// <response code="200">Perfil atualizado.</response>
+    /// <response code="400">Nome em branco, telefone sem DDD, data no futuro ou gênero inválido.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    [HttpPatch("me")]
+    [ProducesResponseType(typeof(ProfileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        var userId = this.GetAuthenticatedUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var invalid = ProfileRules.Validate(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        if (invalid is not null)
+            return BadRequest(new { error = invalid });
+
+        var profile = await userService.UpdateProfileAsync(userId.Value, request);
+
+        return profile is null ? NotFound() : Ok(profile);
+    }
+
+    /// <summary>
     /// Retorna os dados da própria conta.
     /// </summary>
     /// <response code="200">Dados do usuário autenticado.</response>
@@ -120,13 +169,26 @@ public sealed class UserController(IUserService userService) : ControllerBase
     }
 
     /// <summary>
-    /// Exclui a própria conta.
+    /// Exclui a própria conta e os dados pessoais, de forma irreversível
+    /// (HU-05, RN-011).
     /// </summary>
-    /// <response code="204">Conta excluída.</response>
+    /// <remarks>
+    /// As entradas do diário e os registros de auditoria permanecem com a
+    /// autoria anonimizada (RN-014): o conteúdo pertence ao histórico de saúde
+    /// dos demais participantes, que não pediram exclusão.
+    ///
+    /// Depois da exclusão o token deixa de valer, porque a validação confere se
+    /// o usuário ainda existe.
+    /// </remarks>
+    /// <response code="204">Conta e dados pessoais excluídos.</response>
     /// <response code="403">O id informado não é o do usuário autenticado.</response>
+    /// <response code="409">
+    /// O titular administra workspace com outros participantes ativos (RN-012).
+    /// </response>
     [HttpDelete("{id:int}/delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(int id)
     {
         var userId = this.GetAuthenticatedUserId();
@@ -138,11 +200,19 @@ public sealed class UserController(IUserService userService) : ControllerBase
         if (id != userId.Value)
             return Forbid();
 
-        var deleted = await userService.DeleteAsync(id);
+        var result = await userService.DeleteAccountAsync(id);
 
-        if (!deleted)
-            return NotFound();
-
-        return NoContent();
+        return result.Status switch
+        {
+            DeleteAccountStatus.Deleted => NoContent(),
+            DeleteAccountStatus.NotFound => NotFound(),
+            _ => Conflict(new
+            {
+                error = "Você administra workspaces com outros membros ativos. "
+                        + "Transfira a administração ou remova os membros antes de excluir sua conta.",
+                code = "ADMIN_HAS_MEMBERS",
+                workspaces = result.BlockingWorkspaces,
+            }),
+        };
     }
 }

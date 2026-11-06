@@ -33,3 +33,6 @@ export const radius = { sm: 8, md: 12, lg: 16, pill: 999 };
 
 /** Alvo mínimo de toque (RNF-004: interface acessível a idosos). */
 export const TOUCH = 48;
+
+/** Versão exibida em "Minha conta" e "Sobre o Elo de Cuidado". */
+export const APP_VERSION = '1.0.0';

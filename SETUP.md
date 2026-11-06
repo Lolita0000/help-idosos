@@ -50,13 +50,17 @@ A primeira execução leva alguns minutos, porque baixa as imagens do .NET SDK, 
 docker compose ps
 ```
 
-Os dois serviços devem aparecer como `Up`, com o banco marcado `healthy`:
+Os três serviços devem aparecer como `Up`, com o banco marcado `healthy`:
 
 ```
 SERVICE    STATUS                    PORTS
 backend    Up 25 seconds             0.0.0.0:8080->8080/tcp
+backup     Up 25 seconds
 db         Up 46 seconds (healthy)   0.0.0.0:3307->3306/tcp
 ```
+
+O serviço `backup` gera uma cópia do banco a cada 6 horas em `backups/`, mais
+uma imediata ao subir o ambiente. Ver [docs/BACKUP.md](docs/BACKUP.md).
 
 Em seguida, confirme a mensagem de sucesso do backend:
 
@@ -89,26 +93,36 @@ docker compose logs backend | grep "Applying migration"
 
 O **Swagger** (http://localhost:8080/swagger) é o caminho mais prático: permite disparar os endpoints pelo navegador, sem terminal.
 
-Pela linha de comando:
+No Swagger, faça login em `POST /api/auth/login`, copie o valor de `token`,
+clique em **Authorize** no topo e cole apenas o token.
+
+Pela linha de comando, a jornada mínima:
 
 ```bash
-# criar usuário
-curl -X POST http://localhost:8080/api/users/create \
+# 1. criar conta (devolve o token)
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"name":"Carlos Pereira","email":"carlosp@gmail.com","password":"Senha@2026"}'
+  -d '{"name":"Carlos Pereira","email":"carlos@teste.com","password":"Senha@Forte1"}' \
+  | python -c "import sys,json;print(json.load(sys.stdin)['token'])")
 
-# criar workspace
+# 2. criar workspace
 curl -X POST http://localhost:8080/api/workspaces \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Cuidados da Vovó Joana"}'
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Cuidados da Vovó Joana","subjectName":"Joana Pereira","description":null}'
 
-# buscar workspace
-curl http://localhost:8080/api/workspaces/1
+# 3. registrar entrada no diário
+curl -X POST http://localhost:8080/api/diary-entries \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"workspaceId":1,"title":"Tomou o remédio","content":"Losartana 50mg às 8h","label":"medication","moodLevel":null}'
 ```
 
-Os três retornam **200** com o JSON do recurso.
-
-> **Atenção às rotas.** Elas não seguem o padrão REST óbvio: o cadastro de usuário é `POST /api/users/create` (não `/api/users`) e o convite é `/api/invite-code` (singular, com hífen). Na dúvida, consulte o Swagger.
+> **Atenção às rotas.** Elas não seguem o padrão REST óbvio: o convite é
+> `/api/invite-code` (singular, com hífen) e o diário é `/api/diary-entries`
+> (plural). O cadastro público é `POST /api/auth/register`, e não
+> `/api/users/create`, que exige token e existe por compatibilidade.
+>
+> **Todas as rotas exigem token**, exceto registro e login. Sem o cabeçalho
+> `Authorization`, a resposta é **401**. Isso é o comportamento correto.
 
 ### Verificar o banco
 
@@ -160,7 +174,8 @@ docker compose up -d --build      # reconstruir após mudar o código do backend
 
 | Sintoma | Causa |
 |---|---|
-| `POST /api/invite-code` retorna erro de chave estrangeira | O serviço não preenche o `WorkspaceId`. Defeito de regra de negócio em aberto — não é problema de ambiente. |
+| Qualquer rota retorna **401** | Falta o cabeçalho `Authorization: Bearer <token>`, ou o token expirou. Faça login de novo. |
+| **401** com token recém-obtido | A conta foi excluída: a validação confere se ela ainda existe, e não só a assinatura. |
 | Porta 80 ou 8080 já em uso | Outro serviço ocupa a porta. Pare-o ou ajuste o mapeamento no `compose.yml`. |
 | `docker compose` não encontrado | Docker Desktop não está aberto ou o engine não subiu. |
 
@@ -251,7 +266,18 @@ cd backend-tests/EloDeCuidado.Tests
 dotnet test
 ```
 
-> Rode de dentro da pasta do projeto. O `global.json` declara o runner `Microsoft.Testing.Platform`, e a combinação `--project` com `--no-build` faz o `dotnet test` não reconhecer o runner e rodar zero teste.
+Os testes usam banco em memória e não precisam do ambiente no ar.
+
+Sem o SDK instalado, rode pelo contêiner, a partir da raiz do repositório:
+
+```bash
+docker run --rm -v "$(pwd):/src" -w /src/backend-tests/EloDeCuidado.Tests \
+  mcr.microsoft.com/dotnet/sdk:10.0 dotnet test
+```
+
+Esperado: **147 testes, 0 falhas**.
+
+> Rode de dentro da pasta do projeto. O `global.json` declara o runner `Microsoft.Testing.Platform`, e a combinação `--project` com `--no-build` faz o `dotnet test` não reconhecer o runner e rodar zero teste. **Zero teste executado não é sucesso** — confira a contagem na saída.
 
 ### Aplicativo
 

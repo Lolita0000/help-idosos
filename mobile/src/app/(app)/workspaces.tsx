@@ -8,7 +8,7 @@ import { MenuButton } from '../../components/UserMenu';
 import { Alert, Badge, Button, Card, Feather, Logo, Screen, T } from '../../components/ui';
 import { api, type WorkspaceSummary } from '../../core';
 import { plural, shortDateTime } from '../../core/format';
-import { useLoad } from '../../hooks';
+import { useLoad, useTransient } from '../../hooks';
 import { colors } from '../../theme';
 
 type Filter = 'all' | 'admin' | 'member';
@@ -17,7 +17,7 @@ export default function Workspaces() {
   const { data, error, loading, reload } = useLoad((t) => api.listWorkspaces(t));
   const [joinOpen, setJoinOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useTransient();
 
   const list = data ?? [];
   const counts = useMemo(

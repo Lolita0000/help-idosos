@@ -11,7 +11,10 @@ namespace EloDeCuidado.DTOs.AuditLogs;
 /// </remarks>
 /// <param name="Id">Identificador do registro de auditoria.</param>
 /// <param name="WorkspaceId">Workspace em que a ação ocorreu.</param>
-/// <param name="UserId">Usuário responsável pela ação.</param>
+/// <param name="UserId">
+/// Usuário responsável pela ação. Nulo quando ele exerceu o direito de
+/// eliminação: a trilha preserva o que foi feito, sem quem fez (#61).
+/// </param>
 /// <param name="Action">Ação registrada.</param>
 /// <param name="Entity">Tipo da entidade afetada.</param>
 /// <param name="EntityId">Identificador da entidade afetada.</param>
@@ -19,7 +22,7 @@ namespace EloDeCuidado.DTOs.AuditLogs;
 public sealed record AuditLogResponse(
     int Id,
     int WorkspaceId,
-    int UserId,
+    int? UserId,
     string Action,
     string Entity,
     int EntityId,

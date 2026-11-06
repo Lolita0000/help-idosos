@@ -8,6 +8,7 @@ import { AuthHeader } from '../components/AuthHeader';
 import { Alert, Button, Card, Checkbox, Field, LinkText, Screen, T } from '../components/ui';
 import { ApiError, messageOf } from '../core';
 import { PASSWORD_HINT, validateRegister } from '../core/validation';
+import { useFieldChain } from '../hooks';
 import { useSession } from '../session';
 import { colors } from '../theme';
 
@@ -18,6 +19,7 @@ export default function Cadastro() {
   const [failure, setFailure] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const chain = useFieldChain(3);
   if (user && !loading) return <Redirect href="/workspaces" />;
 
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -64,10 +66,10 @@ export default function Cadastro() {
           <T size={15} color={colors.textMuted} style={[styles.center, { marginTop: 6, marginBottom: 22 }]}>
             Preencha os dados abaixo para começar a usar o Elo de Cuidado
           </T>
-          <Field label="Nome completo:" value={form.name} onChangeText={set('name')} placeholder="Digite seu nome.." autoCapitalize="words" autoComplete="name" textContentType="name" error={errors.name} maxLength={256} />
-          <Field label="E-mail:" value={form.email} onChangeText={set('email')} placeholder="Digite seu e-mail.." keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" error={errors.email} maxLength={254} />
-          <Field label="Senha:" value={form.password} onChangeText={set('password')} placeholder="Crie uma senha forte" secure autoCapitalize="none" autoComplete="new-password" textContentType="newPassword" error={errors.password} helper={PASSWORD_HINT} />
-          <Field label="Confirmar senha:" value={form.confirm} onChangeText={set('confirm')} placeholder="Digite a senha novamente" secure autoCapitalize="none" autoComplete="new-password" textContentType="newPassword" error={errors.confirm} />
+          <Field label="Nome completo:" value={form.name} onChangeText={set('name')} placeholder="Digite seu nome.." autoCapitalize="words" autoComplete="name" textContentType="name" error={errors.name} maxLength={256} {...chain(0)} />
+          <Field label="E-mail:" value={form.email} onChangeText={set('email')} placeholder="Digite seu e-mail.." keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" error={errors.email} maxLength={254} {...chain(1)} />
+          <Field label="Senha:" value={form.password} onChangeText={set('password')} placeholder="Crie uma senha forte" secure autoCapitalize="none" autoComplete="new-password" textContentType="newPassword" error={errors.password} helper={PASSWORD_HINT} {...chain(2)} />
+          <Field label="Confirmar senha:" value={form.confirm} onChangeText={set('confirm')} placeholder="Digite a senha novamente" secure autoCapitalize="none" autoComplete="new-password" textContentType="newPassword" error={errors.confirm} {...chain(3)} />
 
           <View style={{ marginTop: 4 }}>
             <Checkbox

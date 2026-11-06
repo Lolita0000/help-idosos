@@ -8,6 +8,8 @@
 //   GET  /api/diary-entries?workspaceId= · POST /api/diary-entries · GET /api/diary-entries/{id}
 //   PATCH /api/diary-entries/{id} · DELETE /api/diary-entries/{id}
 // Conta (v1.0): DELETE /api/users/{id}/delete
+// Perfil (v1.0): GET /api/users/me · PATCH /api/users/me
+// Configuração (v1.0): GET /api/workspaces/{id}/stats · PATCH /api/workspaces/{id} · DELETE /api/workspaces/{id}
 
 import { ApiError, type ErrorCode } from './errors';
 import type {
@@ -16,13 +18,16 @@ import type {
   DiaryEntry,
   DiaryEntryInput,
   EloApi,
+  Gender,
   InviteCode,
   Member,
+  Profile,
   RegisterInput,
   Role,
   Session,
   User,
   WorkspaceDetail,
+  WorkspaceStats,
   WorkspaceSummary,
 } from './types';
 
@@ -56,6 +61,22 @@ interface AuthDto {
   expiresAt: string;
   user: { id: number; name: string; email: string; createdAt: string };
 }
+
+interface ProfileDto {
+  name: string;
+  email: string;
+  phone: string | null;
+  birthDate: string | null;
+  gender: Gender | null;
+}
+
+const toProfile = (p: ProfileDto): Profile => ({
+  name: p.name,
+  email: p.email,
+  phone: p.phone ?? '',
+  birthDate: p.birthDate ?? '',
+  gender: p.gender ?? '',
+});
 
 /** DiaryEntryResponse do backend. */
 interface DiaryEntryDto {
@@ -263,6 +284,22 @@ export function createHttpApi(baseUrl: string): EloApi {
       return userFromToken(token);
     },
 
+    async getProfile(token) {
+      return toProfile(await call<ProfileDto>('GET', '/api/users/me', token));
+    },
+
+    async updateProfile(token, input) {
+      // Vazio apaga no servidor; data vazia exige clearBirthDate.
+      const r = await call<ProfileDto>('PATCH', '/api/users/me', token, {
+        name: input.name.trim(),
+        phone: input.phone.replace(/\D/g, ''),
+        birthDate: input.birthDate || null,
+        clearBirthDate: !input.birthDate,
+        gender: input.gender,
+      });
+      return toProfile(r);
+    },
+
     async listWorkspaces(token) {
       const list = await call<WorkspaceDto[]>('GET', '/api/workspaces', token);
       return list.map(toWorkspace);
@@ -295,6 +332,32 @@ export function createHttpApi(baseUrl: string): EloApi {
           })),
       };
       return detail;
+    },
+
+    async getWorkspaceStats(token, id) {
+      return call<WorkspaceStats>('GET', `/api/workspaces/${id}/stats`, token);
+    },
+
+    async updateWorkspace(token, id, input) {
+      const w = await call<WorkspaceDto>('PATCH', `/api/workspaces/${id}`, token, {
+        name: input.name.trim(),
+        subjectName: input.subjectName.trim(),
+        description: input.description.trim(),
+      });
+      // A resposta da edição não traz o papel; só o administrador chega aqui.
+      return toWorkspace({ ...w, myRole: 'admin' });
+    },
+
+    async deleteWorkspace(token, id) {
+      await call<void>('DELETE', `/api/workspaces/${id}`, token);
+    },
+
+    async removeMember(token, workspaceId, userId) {
+      await call<void>('DELETE', `/api/workspaces/${workspaceId}/members/${userId}`, token);
+    },
+
+    async transferAdmin(token, workspaceId, userId) {
+      await call<void>('POST', `/api/workspaces/${workspaceId}/members/${userId}/transfer-admin`, token);
     },
 
     async listInvites(token, workspaceId) {

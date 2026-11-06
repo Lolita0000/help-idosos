@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -52,12 +53,15 @@ export function T({
 
 /* ---------- Estrutura de tela ---------- */
 
+/** Verdadeiro quando a barra inferior está na tela e já cuida da área segura de baixo. */
+export const BottomNavContext = createContext(false);
+
 export function Screen({
   children,
   bg = colors.white,
   scroll = true,
   contentStyle,
-  edges = ['top', 'bottom'],
+  edges: edgesProp = ['top', 'bottom'],
 }: {
   children: ReactNode;
   bg?: string;
@@ -65,6 +69,8 @@ export function Screen({
   contentStyle?: StyleProp<ViewStyle>;
   edges?: ('top' | 'bottom')[];
 }) {
+  const hasNav = useContext(BottomNavContext);
+  const edges = hasNav ? edgesProp.filter((e) => e !== 'bottom') : edgesProp;
   const body = scroll ? (
     <ScrollView
       contentContainerStyle={[styles.scroll, contentStyle]}
@@ -79,7 +85,8 @@ export function Screen({
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <SafeAreaView edges={edges} style={{ flex: 1 }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* No Android com tela de ponta a ponta o sistema não redimensiona sozinho: o padding vale nos dois. */}
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <View style={styles.column}>{body}</View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -241,6 +248,10 @@ export function Field({
   textContentType,
   maxLength,
   center,
+  readOnly,
+  inputRef,
+  returnKeyType,
+  onSubmitEditing,
 }: {
   label?: string;
   value: string;
@@ -249,13 +260,19 @@ export function Field({
   error?: string;
   helper?: string;
   secure?: boolean;
-  keyboardType?: 'default' | 'email-address';
+  keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'number-pad';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   multiline?: boolean;
   autoComplete?: 'email' | 'name' | 'password' | 'new-password' | 'off';
   textContentType?: 'emailAddress' | 'name' | 'password' | 'newPassword' | 'none';
   maxLength?: number;
   center?: boolean;
+  /** Mostra o valor sem permitir edição (ex.: e-mail que identifica a conta). */
+  readOnly?: boolean;
+  inputRef?: (el: TextInput | null) => void;
+  /** "next" mostra a seta de avançar no teclado; "done" mostra o ok. Não vale em campo de várias linhas. */
+  returnKeyType?: 'next' | 'done';
+  onSubmitEditing?: () => void;
 }) {
   const [hidden, setHidden] = useState(true);
   const [focused, setFocused] = useState(false);
@@ -270,6 +287,10 @@ export function Field({
       ) : null}
       <View style={[styles.inputWrap, { borderColor, borderWidth: error || focused ? 1.5 : 1 }, multiline && { minHeight: 96 }]}>
         <TextInput
+          ref={inputRef}
+          returnKeyType={multiline ? undefined : returnKeyType}
+          onSubmitEditing={multiline ? undefined : onSubmitEditing}
+          blurOnSubmit={multiline ? undefined : returnKeyType !== 'next'}
           accessibilityLabel={label ?? placeholder}
           value={value}
           onChangeText={onChangeText}
@@ -283,6 +304,7 @@ export function Field({
           textContentType={textContentType}
           multiline={multiline}
           maxLength={maxLength}
+          editable={!readOnly}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={[
@@ -290,6 +312,7 @@ export function Field({
             { fontSize: Math.round(16 * scale) },
             multiline && { textAlignVertical: 'top', paddingTop: 12, minHeight: 96 },
             center && { textAlign: 'center', letterSpacing: 2 },
+            readOnly && { color: colors.textMuted, backgroundColor: '#F3F4F6' },
             Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null,
           ]}
         />
@@ -445,28 +468,34 @@ export function Dialog({
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel} statusBarTranslucent>
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView style={styles.overlay} behavior="padding">
         <View style={styles.dialog} accessibilityViewIsModal>
-          {icon ? (
-            <Feather name={icon} size={22} color={danger ? colors.danger : colors.primary} style={{ alignSelf: 'center', marginBottom: 8 }} />
-          ) : null}
-          <T w="semibold" size={18} style={{ textAlign: 'center' }}>
+          {icon ? <Feather name={icon} size={22} color={colors.primary} style={{ alignSelf: 'center', marginBottom: 10 }} /> : null}
+          <T w="semibold" size={15} color={danger ? colors.danger : colors.text} style={{ textAlign: 'center' }}>
             {title}
           </T>
           {message ? (
-            <T size={15} color={colors.textSoft} style={{ textAlign: 'center', marginTop: 10 }}>
+            <T w="medium" size={12} color="rgba(0,0,0,0.75)" style={{ textAlign: 'center', marginTop: 12 }}>
               {message}
             </T>
           ) : null}
           {children}
-          <View style={[styles.row, { marginTop: 20, gap: 12 }]}>
-            <Button title={cancel} variant="outline" onPress={onCancel} style={{ flex: 1 }} small />
+          <View style={[styles.row, { marginTop: 22, gap: 12 }]}>
+            <Button title={cancel} variant="outline" onPress={onCancel} style={styles.dialogBtn} small />
             {confirm ? (
-              <Button title={confirm} variant={danger ? 'danger' : 'primary'} onPress={onConfirm} disabled={confirmDisabled} loading={loading} style={{ flex: 1 }} small />
+              <Button
+                title={confirm}
+                variant={danger ? 'danger' : 'primary'}
+                onPress={onConfirm}
+                disabled={confirmDisabled}
+                loading={loading}
+                style={styles.dialogBtn}
+                small
+              />
             ) : null}
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -479,6 +508,35 @@ export function BackLink({ label = 'Voltar', onPress }: { label?: string; onPres
         {label}
       </T>
     </Pressable>
+  );
+}
+
+/** Faz o conteúdo aparecer suavemente. Usado abaixo das abas, para só o corpo da tela mudar. */
+export function FadeIn({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+  }, [opacity]);
+  return <Animated.View style={[{ opacity }, style]}>{children}</Animated.View>;
+}
+
+/** Cabeçalho das telas internas do Figma: seta de voltar e título ao lado. */
+export function ScreenHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <View style={styles.row}>
+      <Pressable
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        hitSlop={8}
+        style={{ width: TOUCH, height: TOUCH, alignItems: 'flex-start', justifyContent: 'center' }}
+      >
+        <Feather name="chevron-left" size={32} color={colors.text} />
+      </Pressable>
+      <T w="semibold" size={20} style={{ marginLeft: 6, flex: 1 }} accessibilityRole="header">
+        {title}
+      </T>
+    </View>
   );
 }
 
@@ -542,17 +600,19 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: colors.overlay,
+    backgroundColor: 'rgba(217,217,217,0.75)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
   dialog: {
     width: '100%',
-    maxWidth: 360,
+    maxWidth: 320,
     backgroundColor: colors.white,
-    borderRadius: radius.lg,
-    padding: 22,
+    borderRadius: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
   },
+  dialogBtn: { flex: 1, borderRadius: 10, borderWidth: 1 },
   back: { flexDirection: 'row', alignItems: 'center', minHeight: TOUCH, alignSelf: 'flex-start' },
 });

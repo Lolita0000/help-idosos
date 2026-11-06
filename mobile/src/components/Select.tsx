@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    minHeight: 40,
+    minHeight: 44,
     borderRadius: 6,
     paddingHorizontal: 10,
     backgroundColor: colors.white,

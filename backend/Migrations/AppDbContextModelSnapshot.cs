@@ -46,7 +46,7 @@ namespace EloDeCuidado.Migrations
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.Property<int>("WorkspaceId")
@@ -69,7 +69,7 @@ namespace EloDeCuidado.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AuthorId")
+                    b.Property<int?>("AuthorId")
                         .HasColumnType("int");
 
                     b.Property<string>("Content")
@@ -149,6 +149,9 @@ namespace EloDeCuidado.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -156,6 +159,10 @@ namespace EloDeCuidado.Migrations
                         .IsRequired()
                         .HasMaxLength(254)
                         .HasColumnType("varchar(254)");
+
+                    b.Property<string>("Gender")
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -166,6 +173,10 @@ namespace EloDeCuidado.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(11)
+                        .HasColumnType("varchar(11)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -246,8 +257,7 @@ namespace EloDeCuidado.Migrations
                     b.HasOne("EloDeCuidado.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("EloDeCuidado.Models.Workspace", "Workspace")
                         .WithMany()
@@ -265,8 +275,7 @@ namespace EloDeCuidado.Migrations
                     b.HasOne("EloDeCuidado.Models.User", "Author")
                         .WithMany()
                         .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("EloDeCuidado.Models.Workspace", "Workspace")
                         .WithMany("DiaryEntries")

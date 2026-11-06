@@ -22,6 +22,12 @@ public static class PasswordHasher
     public const int MinimumLength = 8;
 
     /// <summary>
+    /// Número máximo de caracteres aceito ao definir uma senha. O login não aplica
+    /// este limite, para não trancar fora quem já tem uma senha mais longa.
+    /// </summary>
+    public const int MaximumLength = 24;
+
+    /// <summary>
     /// Gera o hash BCrypt de uma senha em texto puro.
     /// </summary>
     /// <param name="password">A senha em texto puro.</param>
@@ -51,7 +57,7 @@ public static class PasswordHasher
 
     /// <summary>
     /// Valida a força da senha conforme a política do produto: no mínimo
-    /// <see cref="MinimumLength"/> caracteres, com ao menos uma letra maiúscula,
+    /// <see cref="MinimumLength"/> e no máximo <see cref="MaximumLength"/> caracteres, com ao menos uma letra maiúscula,
     /// uma minúscula, um número e um caractere especial.
     /// </summary>
     /// <param name="password">A senha a validar.</param>
@@ -62,6 +68,12 @@ public static class PasswordHasher
         if (string.IsNullOrWhiteSpace(password) || password.Length < MinimumLength)
         {
             error = $"A senha deve conter no mínimo {MinimumLength} caracteres.";
+            return false;
+        }
+
+        if (password.Length > MaximumLength)
+        {
+            error = $"A senha deve conter no máximo {MaximumLength} caracteres.";
             return false;
         }
 

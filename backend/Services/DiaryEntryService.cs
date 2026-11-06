@@ -27,15 +27,25 @@ public sealed class DiaryEntryService(
 {
     /// <inheritdoc />
     public async Task<IReadOnlyList<DiaryEntryResponse>?> GetByWorkspaceAsync(
-        int workspaceId, int requesterId)
+        int workspaceId, int requesterId, DiaryEntryFilter? filter = null)
     {
         // O diário contém observações de saúde de uma pessoa: só quem participa
         // do workspace pode lê-lo (RNF-002).
         if (!await IsMemberAsync(workspaceId, requesterId))
             return null;
 
-        var entries = await db.DiaryEntries
-            .Where(e => e.WorkspaceId == workspaceId)
+        var query = db.DiaryEntries.Where(e => e.WorkspaceId == workspaceId);
+
+        if (filter?.Label is { } label)
+            query = query.Where(e => e.Label == label);
+
+        if (filter?.AuthorId is { } authorId)
+            query = query.Where(e => e.AuthorId == authorId);
+
+        if (filter?.Search?.Trim().ToLowerInvariant() is { Length: > 0 } term)
+            query = query.Where(e => e.Title.ToLower().Contains(term) || e.Content.ToLower().Contains(term));
+
+        var entries = await query
             .Include(e => e.Author)
             // A tela do diário mostra o registro mais recente primeiro.
             .OrderByDescending(e => e.CreatedAt)
@@ -260,8 +270,11 @@ public sealed class DiaryEntryService(
         new(
             entry.Id,
             entry.WorkspaceId,
-            entry.AuthorId,
-            entry.Author?.Name ?? string.Empty,
+            // Zero quando o autor excluiu a conta: nenhum usuário tem esse id,
+            // então a comparação de autoria no cliente nunca casa e as opções de
+            // editar e excluir não são oferecidas para a entrada anonimizada.
+            entry.AuthorId ?? 0,
+            entry.Author?.Name ?? "Usuário removido",
             entry.Title,
             entry.Content,
             entry.Label.ToString().ToLowerInvariant(),

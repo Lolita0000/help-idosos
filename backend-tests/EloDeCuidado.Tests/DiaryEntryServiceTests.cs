@@ -582,6 +582,93 @@ public class DiaryEntryServiceTests : IAsyncLifetime
         Assert.Null(lista);
     }
 
+    // HU-08, histórico com filtros e busca
+
+    private async Task<DiaryEntryService> ComHistoricoAsync()
+    {
+        var service = Servico();
+        await service.CreateAsync(Nova(titulo: "Losartana de manhã", conteudo: "Sem tontura.", categoria: "medication"), _autorId);
+        await service.CreateAsync(Nova(titulo: "Dor de cabeça", conteudo: "Começou depois do almoço.", categoria: "symptom"), _autorId);
+        await service.CreateAsync(Nova(titulo: "Consulta cardiologista", conteudo: "Levar exames. LOSARTANA ajustada.", categoria: "appointment"), _outroMembroId);
+        await service.CreateAsync(Nova(titulo: "Dia tranquilo", conteudo: "Animada.", categoria: "mood", humor: 5), _outroMembroId);
+        return service;
+    }
+
+    [Fact]
+    public async Task GetByWorkspaceAsync_DeveFiltrarPorCategoria()
+    {
+        var service = await ComHistoricoAsync();
+
+        var lista = await service.GetByWorkspaceAsync(
+            _workspaceId, _autorId, new DiaryEntryFilter(Label: EntryLabel.Symptom));
+
+        Assert.Equal(["Dor de cabeça"], lista!.Select(e => e.Title));
+    }
+
+    [Fact]
+    public async Task GetByWorkspaceAsync_DeveFiltrarPorAutor()
+    {
+        var service = await ComHistoricoAsync();
+
+        var lista = await service.GetByWorkspaceAsync(
+            _workspaceId, _autorId, new DiaryEntryFilter(AuthorId: _outroMembroId));
+
+        Assert.Equal(2, lista!.Count);
+        Assert.All(lista, e => Assert.Equal(_outroMembroId, e.AuthorId));
+    }
+
+    [Fact]
+    public async Task GetByWorkspaceAsync_DeveBuscarNoTituloENaDescricao_SemDiferenciarCaixa()
+    {
+        var service = await ComHistoricoAsync();
+
+        var lista = await service.GetByWorkspaceAsync(
+            _workspaceId, _autorId, new DiaryEntryFilter(Search: "  losartana "));
+
+        Assert.Equal(["Consulta cardiologista", "Losartana de manhã"], lista!.Select(e => e.Title).Order());
+    }
+
+    [Fact]
+    public async Task GetByWorkspaceAsync_DeveCombinarFiltros()
+    {
+        var service = await ComHistoricoAsync();
+
+        var lista = await service.GetByWorkspaceAsync(
+            _workspaceId, _autorId,
+            new DiaryEntryFilter(Label: EntryLabel.Medication, AuthorId: _autorId, Search: "losartana"));
+
+        Assert.Equal(["Losartana de manhã"], lista!.Select(e => e.Title));
+
+        var vazia = await service.GetByWorkspaceAsync(
+            _workspaceId, _autorId,
+            new DiaryEntryFilter(Label: EntryLabel.Medication, AuthorId: _outroMembroId));
+
+        Assert.Empty(vazia!);
+    }
+
+    [Fact]
+    public async Task GetByWorkspaceAsync_DeveIgnorarBuscaEmBranco_EManterAOrdem()
+    {
+        var service = await ComHistoricoAsync();
+
+        var lista = await service.GetByWorkspaceAsync(
+            _workspaceId, _autorId, new DiaryEntryFilter(Search: "   "));
+
+        Assert.Equal(4, lista!.Count);
+        Assert.Equal(lista.OrderByDescending(e => e.CreatedAt).ThenByDescending(e => e.Id).Select(e => e.Id), lista.Select(e => e.Id));
+    }
+
+    [Fact]
+    public async Task GetByWorkspaceAsync_ComFiltro_NaoDeveVazarParaQuemNaoParticipa()
+    {
+        var service = await ComHistoricoAsync();
+
+        var lista = await service.GetByWorkspaceAsync(
+            _workspaceId, _estranhoId, new DiaryEntryFilter(Search: "losartana"));
+
+        Assert.Null(lista);
+    }
+
     [Fact]
     public async Task GetByIdAsync_DeveRecusar_QuandoNaoParticipaDoWorkspace()
     {

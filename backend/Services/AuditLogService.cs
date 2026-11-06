@@ -78,6 +78,8 @@ public sealed class AuditLogService(AppDbContext db) : IAuditLogService
     {
         AuditAction.DiaryEntryUpdated => "diary_entry.updated",
         AuditAction.DiaryEntryDeleted => "diary_entry.deleted",
+        AuditAction.MemberRemoved => "workspace_member.removed",
+        AuditAction.AdminTransferred => "workspace_member.admin_transferred",
         _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ação de auditoria sem nome definido."),
     };
 
@@ -85,6 +87,7 @@ public sealed class AuditLogService(AppDbContext db) : IAuditLogService
     internal static string NameOf(AuditEntity entity) => entity switch
     {
         AuditEntity.DiaryEntry => "diary_entry",
+        AuditEntity.WorkspaceMember => "workspace_member",
         _ => throw new ArgumentOutOfRangeException(nameof(entity), entity, "Entidade de auditoria sem nome definido."),
     };
 

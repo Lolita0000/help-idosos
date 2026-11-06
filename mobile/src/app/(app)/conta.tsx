@@ -1,21 +1,26 @@
-// Minha conta (Figma: perfil, excluir-conta-aviso, excluir-conta-confirmar, excluir-conta-bloqueado).
+// Minha conta (Figma: perfil, perfil-sair, excluir-conta-aviso, excluir-conta-confirmar, excluir-conta-bloqueado).
 // HU-05: exclusão da conta com aviso de irreversibilidade e dupla confirmação.
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { MenuButton } from '../../components/UserMenu';
-import { Alert, Avatar, Button, Dialog, Feather, Screen, T } from '../../components/ui';
+import { Alert, Dialog, Feather, Screen, T } from '../../components/ui';
 import { ApiError, messageOf } from '../../core';
 import { initials } from '../../core/format';
 import { useFontScale } from '../../fontScale';
 import { useSession } from '../../session';
-import { colors, fonts, radius, TOUCH } from '../../theme';
+import { APP_VERSION, colors, fonts, TOUCH } from '../../theme';
 
 /** Palavra que a pessoa digita na segunda confirmação. */
 const CONFIRM_WORD = 'EXCLUIR';
 
+const RED = '#FF0F0F';
+const CARD_BORDER = 'rgba(0,0,0,0.1)';
+
 type Step = 'idle' | 'warning' | 'confirm' | 'blocked';
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 export default function Conta() {
   const { user, logout, deleteAccount, handleAuthError } = useSession();
@@ -55,36 +60,58 @@ export default function Conta() {
 
   return (
     <Screen contentStyle={styles.page}>
-      <View style={styles.top}>
-        <MenuButton current="conta" />
-        <T w="semibold" size={22} style={{ marginLeft: 12 }} accessibilityRole="header">
-          Minha conta
-        </T>
-      </View>
+      <MenuButton current="conta" />
 
       <View style={styles.userCard}>
-        <Avatar text={initials(user.name)} size={56} tone="strong" />
-        <View style={{ marginLeft: 14, flex: 1 }}>
-          <T w="semibold" size={19} numberOfLines={1}>
+        <View style={styles.bubbleBig} />
+        <View style={[styles.bubbleDot, { width: 13, height: 13, left: 303, top: 61 }]} />
+        <View style={[styles.bubbleDot, { width: 13, height: 13, left: 314, top: 84 }]} />
+        <View style={[styles.bubbleDot, { width: 6, height: 6, left: 285, top: 42 }]} />
+        <View style={styles.avatarWrap}>
+          <View style={styles.avatar}>
+            <T w="semibold" size={20} color={colors.white}>
+              {initials(user.name)}
+            </T>
+          </View>
+          <View style={styles.camera}>
+            <Feather name="camera" size={9} color={colors.text} />
+          </View>
+        </View>
+        <View style={{ marginLeft: 12, flex: 1 }}>
+          <T w="semibold" size={20} numberOfLines={1}>
             {user.name}
           </T>
-          <T size={14} color={colors.textMuted} numberOfLines={1}>
+          <T w="medium" size={15} color="rgba(0,0,0,0.6)" numberOfLines={1}>
             {user.email}
           </T>
         </View>
       </View>
 
+      <T w="semibold" size={15} style={{ marginTop: 24, marginBottom: 10, marginLeft: 6 }}>
+        Minha conta
+      </T>
       <View style={styles.list}>
-        <Row icon="type" label="Acessibilidade" href="/acessibilidade" />
-        <Row icon="file-text" label="Termos de uso" href="/termos" />
-        <Row icon="shield" label="Política de privacidade" href="/privacidade" last />
+        <Row icon="account-outline" label="Dados pessoais" href="/dados-pessoais" />
+        <Row icon="palette-outline" label="Acessibilidade" href="/acessibilidade" />
+        <Row icon="text-box-outline" label="Termos de uso" href="/termos" />
+        <Row icon="shield-check-outline" label="Política de privacidade" href="/privacidade" />
+        <Row icon="information" label="Sobre o Elo de Cuidado" href="/sobre" hint={`Versão ${APP_VERSION}`} last />
       </View>
 
       {failure ? <Alert message={failure} /> : null}
 
-      <Button title="Sair da conta" icon="log-out" variant="outline" onPress={() => setConfirmLogout(true)} style={{ marginTop: 8 }} />
+      <Pressable
+        onPress={() => setConfirmLogout(true)}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.logout, pressed && { opacity: 0.85 }]}
+      >
+        <Feather name="log-out" size={16} color={RED} />
+        <T w="medium" size={15} color={RED} style={{ marginLeft: 10 }}>
+          Sair da conta
+        </T>
+      </Pressable>
 
-      <T w="semibold" size={17} style={{ marginTop: 28 }}>
+      <T w="semibold" size={15} style={{ marginTop: 28, marginLeft: 6 }}>
         Privacidade e dados
       </T>
       <Pressable
@@ -92,23 +119,22 @@ export default function Conta() {
         accessibilityRole="button"
         style={({ pressed }) => [styles.danger, pressed && { opacity: 0.85 }]}
       >
-        <Feather name="trash-2" size={18} color={colors.danger} />
-        <T w="semibold" size={16} color={colors.danger} style={{ marginLeft: 10 }}>
+        <Feather name="trash-2" size={16} color={RED} />
+        <T w="medium" size={15} color={RED} style={{ marginLeft: 10 }}>
           Excluir minha conta
         </T>
       </Pressable>
-      <T size={13} color={colors.textMuted} style={{ marginTop: 8, textAlign: 'center' }}>
+      <T w="regular" size={12} color="#737373" style={{ marginTop: 8, textAlign: 'center' }}>
         Remove seus dados pessoais de forma permanente (LGPD).
       </T>
 
       {/* 1ª confirmação: aviso de que a ação é permanente e irreversível. */}
       <Dialog
         visible={step === 'warning'}
-        icon="alert-triangle"
         danger
         title="Excluir sua conta?"
         message={
-          'Esta ação é permanente e não pode ser desfeita. Seu nome, e-mail, senha e vínculos com workspaces serão apagados e sua sessão será encerrada.\n\nAs entradas que você registrou em workspaces compartilhados continuam no histórico, com a autoria anônima.'
+          'Esta ação é permanente e não pode ser desfeita. Seu nome, e-mail, senha e vínculos com workspaces serão apagados e sua sessão será encerrada.\n\nAs entradas que você registrou em workspaces compartilhados continuam no histórico, mas com autoria anônima.'
         }
         confirm="Continuar"
         onCancel={cancel}
@@ -118,7 +144,6 @@ export default function Conta() {
       {/* 2ª confirmação: a pessoa digita a palavra de confirmação. */}
       <Dialog
         visible={step === 'confirm'}
-        icon="trash-2"
         danger
         title="Confirme a exclusão"
         message={`Para confirmar, digite ${CONFIRM_WORD} no campo abaixo.`}
@@ -136,25 +161,26 @@ export default function Conta() {
           placeholder={CONFIRM_WORD}
           placeholderTextColor="#9CA3AF"
           accessibilityLabel={`Digite ${CONFIRM_WORD} para confirmar`}
-          style={[styles.confirmInput, { fontSize: Math.round(16 * scale) }]}
+          style={[styles.confirmInput, { fontSize: Math.round(14 * scale) }]}
         />
       </Dialog>
 
       {/* RN-012: administrador com membros ativos precisa transferir a administração antes. */}
       <Dialog
         visible={step === 'blocked'}
-        icon="lock"
         title="Não é possível excluir agora"
         message={blockedMessage}
-        cancel="Entendi"
+        cancel="Voltar"
+        confirm="Entendi"
         onCancel={cancel}
+        onConfirm={cancel}
       />
 
       <Dialog
         visible={confirmLogout}
         icon="log-out"
         title="Sair da conta?"
-        message="Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente para acessar o aplicativo."
+        message={'Tem certeza que deseja sair da sua conta?\nVocê precisará fazer login novamente para acessar o aplicativo'}
         confirm="Sair da conta"
         onCancel={() => setConfirmLogout(false)}
         onConfirm={async () => {
@@ -166,55 +192,97 @@ export default function Conta() {
   );
 }
 
-function Row({ icon, label, href, last }: { icon: keyof typeof Feather.glyphMap; label: string; href: Href; last?: boolean }) {
+function Row({ icon, label, href, hint, last }: { icon: IconName; label: string; href: Href; hint?: string; last?: boolean }) {
   return (
     <Pressable
       onPress={() => router.push(href)}
       accessibilityRole="button"
       style={({ pressed }) => [styles.row, !last && styles.rowBorder, pressed && { backgroundColor: '#F3F4F6' }]}
     >
-      <Feather name={icon} size={20} color={colors.primary} />
-      <T size={16} style={{ flex: 1, marginLeft: 14 }}>
+      <MaterialCommunityIcons name={icon} size={18} color={colors.primary} />
+      <T w="medium" size={12} style={{ flex: 1, marginLeft: 14 }}>
         {label}
       </T>
-      <Feather name="chevron-right" size={20} color="#9CA3AF" />
+      {hint ? (
+        <T w="medium" size={11} color="rgba(0,0,0,0.6)" style={{ marginRight: 8 }}>
+          {hint}
+        </T>
+      ) : null}
+      <Feather name="chevron-right" size={18} color="#6B7280" />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 36 },
-  top: { flexDirection: 'row', alignItems: 'center' },
+  page: { paddingHorizontal: 30, paddingTop: 12, paddingBottom: 36 },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 18,
-    padding: 16,
-    borderRadius: radius.md,
+    marginTop: 8,
+    minHeight: 121,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#C9CED6',
+    borderColor: CARD_BORDER,
+    overflow: 'hidden',
   },
-  list: { marginTop: 18, marginBottom: 16, borderRadius: radius.md, borderWidth: 1, borderColor: '#C9CED6', overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', minHeight: TOUCH + 8, paddingHorizontal: 16 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  bubbleBig: { position: 'absolute', left: 289, top: -8, width: 68, height: 68, borderRadius: 34, backgroundColor: '#D0E1FF' },
+  bubbleDot: { position: 'absolute', borderRadius: 999, backgroundColor: '#D0E1FF' },
+  avatarWrap: { width: 60, height: 60 },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  camera: {
+    position: 'absolute',
+    right: -4,
+    bottom: -4,
+    width: 19,
+    height: 19,
+    borderRadius: 10,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  list: { borderRadius: 10, borderWidth: 1, borderColor: CARD_BORDER, overflow: 'hidden', marginBottom: 28 },
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: TOUCH, paddingHorizontal: 20 },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  logout: {
+    minHeight: 44,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: RED,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   danger: {
     marginTop: 10,
-    minHeight: TOUCH,
-    borderRadius: radius.sm,
-    backgroundColor: colors.dangerSoft,
+    minHeight: 44,
+    borderRadius: 20,
+    backgroundColor: '#FCEDED',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
   confirmInput: {
     marginTop: 14,
-    minHeight: TOUCH,
-    borderWidth: 1.5,
+    minHeight: 44,
+    borderWidth: 1,
     borderColor: '#9CA3AF',
-    borderRadius: radius.sm,
+    borderRadius: 10,
     paddingHorizontal: 14,
-    fontFamily: fonts.semibold,
-    letterSpacing: 2,
+    fontFamily: fonts.medium,
+    letterSpacing: 1,
     textAlign: 'center',
     color: colors.text,
   },

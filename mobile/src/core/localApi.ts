@@ -14,16 +14,29 @@ import type {
   DiaryEntry,
   DiaryEntryInput,
   EloApi,
+  Gender,
   InviteCode,
   Member,
+  Profile,
   RegisterInput,
   Role,
   Session,
   User,
+  UpdateProfileInput,
+  UpdateWorkspaceInput,
   WorkspaceDetail,
+  WorkspaceStats,
   WorkspaceSummary,
 } from './types';
-import { isValidEmail, normalizeCode, passwordError, validateEntry, validateWorkspace } from './validation';
+import {
+  isoToDisplay,
+  isValidEmail,
+  normalizeCode,
+  passwordError,
+  validateEntry,
+  validateProfile,
+  validateWorkspace,
+} from './validation';
 
 bcrypt.setRandomFallback((len: number) => Array.from(Crypto.getRandomBytes(len)));
 
@@ -37,6 +50,9 @@ const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O e 1/I
 
 interface UserRow extends User {
   passwordHash: string;
+  phone?: string;
+  birthDate?: string;
+  gender?: Gender | '';
 }
 interface WorkspaceRow {
   id: string;
@@ -256,6 +272,24 @@ export const localApi: EloApi = {
     return publicUser(requireUser(db, token));
   },
 
+  async getProfile(token): Promise<Profile> {
+    const u = requireUser(await load(), token);
+    return { name: u.name, email: u.email, phone: u.phone ?? '', birthDate: u.birthDate ?? '', gender: u.gender ?? '' };
+  },
+
+  async updateProfile(token, input: UpdateProfileInput): Promise<Profile> {
+    const fields = validateProfile({ ...input, birthDate: isoToDisplay(input.birthDate) });
+    if (Object.keys(fields).length) throw new ApiError('VALIDATION', 'Revise os campos.', fields);
+    const db = await load();
+    const u = requireUser(db, token);
+    u.name = input.name.trim();
+    u.phone = input.phone.replace(/\D/g, '');
+    u.birthDate = input.birthDate;
+    u.gender = input.gender;
+    await save(db);
+    return { name: u.name, email: u.email, phone: u.phone, birthDate: u.birthDate, gender: u.gender };
+  },
+
   async listWorkspaces(token) {
     const db = await load();
     const user = requireUser(db, token);
@@ -312,6 +346,69 @@ export const localApi: EloApi = {
       .sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
     const detail: WorkspaceDetail = { ...summary(db, ws, me.role), members };
     return detail;
+  },
+
+  async getWorkspaceStats(token, workspaceId): Promise<WorkspaceStats> {
+    const db = await load();
+    requireMember(db, requireUser(db, token).id, workspaceId);
+    return {
+      memberCount: db.members.filter((m) => m.workspaceId === workspaceId).length,
+      entryCount: db.entries.filter((e) => e.workspaceId === workspaceId).length,
+    };
+  },
+
+  async updateWorkspace(token, workspaceId, input: UpdateWorkspaceInput) {
+    const db = await load();
+    const me = requireMember(db, requireUser(db, token).id, workspaceId);
+    if (me.role !== 'admin') throw new ApiError('FORBIDDEN', 'Apenas o administrador edita o workspace.');
+    const fields = validateWorkspace(input.name, input.subjectName);
+    if (Object.keys(fields).length) throw new ApiError('VALIDATION', 'Revise os campos.', fields);
+    const ws = db.workspaces.find((w) => w.id === workspaceId);
+    if (!ws) throw new ApiError('NOT_FOUND', 'Workspace não encontrado.');
+    ws.name = input.name.trim();
+    ws.subjectName = input.subjectName.trim();
+    ws.description = input.description.trim() || null;
+    await save(db);
+    return summary(db, ws, me.role);
+  },
+
+  // RN-012: a exclusão leva membros, convites, entradas e a auditoria do workspace.
+  async deleteWorkspace(token, workspaceId) {
+    const db = await load();
+    const me = requireMember(db, requireUser(db, token).id, workspaceId);
+    if (me.role !== 'admin') throw new ApiError('FORBIDDEN', 'Apenas o administrador exclui o workspace.');
+    db.workspaces = db.workspaces.filter((w) => w.id !== workspaceId);
+    db.members = db.members.filter((m) => m.workspaceId !== workspaceId);
+    db.invites = db.invites.filter((i) => i.workspaceId !== workspaceId);
+    db.entries = db.entries.filter((e) => e.workspaceId !== workspaceId);
+    db.audit = db.audit.filter((a) => a.workspaceId !== workspaceId);
+    await save(db);
+  },
+
+  async removeMember(token, workspaceId, userId) {
+    const db = await load();
+    const me = requireMember(db, requireUser(db, token).id, workspaceId);
+    if (me.role !== 'admin') throw new ApiError('FORBIDDEN', 'Apenas o administrador remove membros.');
+    if (userId === me.userId)
+      throw new ApiError('VALIDATION', 'Você é o administrador deste workspace e não pode se remover. Passe a administração para outra pessoa primeiro.');
+    const target = db.members.find((m) => m.workspaceId === workspaceId && m.userId === userId);
+    if (!target) throw new ApiError('NOT_FOUND', 'Essa pessoa não participa deste workspace.');
+    if (target.role === 'admin') throw new ApiError('VALIDATION', 'Um administrador não pode ser removido. Passe a administração antes.');
+    db.members = db.members.filter((m) => m !== target);
+    await save(db);
+  },
+
+  async transferAdmin(token, workspaceId, userId) {
+    const db = await load();
+    const me = requireMember(db, requireUser(db, token).id, workspaceId);
+    if (me.role !== 'admin') throw new ApiError('FORBIDDEN', 'Apenas o administrador passa a administração.');
+    if (userId === me.userId) throw new ApiError('VALIDATION', 'Você já é o administrador deste workspace.');
+    const target = db.members.find((m) => m.workspaceId === workspaceId && m.userId === userId);
+    if (!target) throw new ApiError('NOT_FOUND', 'Essa pessoa não participa deste workspace.');
+    if (target.role === 'admin') throw new ApiError('VALIDATION', 'Essa pessoa já é administradora deste workspace.');
+    target.role = 'admin';
+    me.role = 'member';
+    await save(db);
   },
 
   async listInvites(token, workspaceId) {

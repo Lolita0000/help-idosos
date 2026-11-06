@@ -12,7 +12,9 @@ public interface IDiaryEntryService
     /// </summary>
     /// <param name="workspaceId">Workspace consultado.</param>
     /// <param name="requesterId">Usuário autenticado, que precisa participar dele.</param>
-    Task<IReadOnlyList<DiaryEntryResponse>?> GetByWorkspaceAsync(int workspaceId, int requesterId);
+    /// <param name="filter">Categoria, autor e busca textual; sem filtro, lista tudo.</param>
+    Task<IReadOnlyList<DiaryEntryResponse>?> GetByWorkspaceAsync(
+        int workspaceId, int requesterId, DiaryEntryFilter? filter = null);
 
     /// <summary>
     /// Retorna uma entrada pelo ID, se o solicitante participar do workspace dela.

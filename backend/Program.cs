@@ -1,4 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using EloDeCuidado.Data;
 using EloDeCuidado.Services;
@@ -28,6 +30,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
+builder.Services.AddScoped<IWorkspaceMemberService, WorkspaceMemberService>();
 builder.Services.AddScoped<IInviteCodeService, InviteCodeService>();
 builder.Services.AddScoped<IDiaryEntryService, DiaryEntryService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
@@ -75,6 +78,30 @@ builder.Services
             ValidateLifetime = true,
             // Sem tolerância de relógio: um token expirado é recusado de imediato.
             ClockSkew = TimeSpan.Zero,
+        };
+
+        // Assinatura válida não basta: o token precisa pertencer a uma conta que
+        // ainda existe. Sem esta conferência, quem exclui a conta (HU-05)
+        // continuaria usando o token até ele expirar, horas depois, e a exclusão
+        // não encerraria a sessão como a RN-011 exige.
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var claim = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)
+                    ?? context.Principal?.FindFirst(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(claim?.Value, out var userId))
+                {
+                    context.Fail("Token sem identificação de usuário.");
+                    return;
+                }
+
+                var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+
+                if (!await db.Users.AnyAsync(u => u.Id == userId))
+                    context.Fail("A conta associada a este token não existe mais.");
+            },
         };
     });
 

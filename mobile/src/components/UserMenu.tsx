@@ -10,7 +10,7 @@ import { useSession } from '../session';
 import { colors } from '../theme';
 import { Avatar, Dialog, Feather, Logo, T } from './ui';
 
-export type MenuPage = 'diario' | 'membros' | 'convites' | 'workspaces' | 'conta';
+export type MenuPage = 'diario' | 'membros' | 'convites' | 'configuracao' | 'workspaces' | 'conta';
 
 /** Workspace aberto: com ele, o menu mostra o "Menu principal" do workspace. */
 export interface MenuWorkspace {
@@ -73,9 +73,12 @@ function UserMenu({
             <>
               <SectionLabel>Menu principal</SectionLabel>
               <Item icon="book" label="Diário de Cuidados" active={current === 'diario'} onPress={() => go({ pathname: '/workspace/[id]', params: { id } })} />
-              <Item icon="users" label="Membros" active={current === 'membros'} onPress={() => go({ pathname: '/workspace/[id]/membros', params: { id } })} />
+              <Item icon="users" label="Membros" active={current === 'membros'} onPress={() => go({ pathname: '/workspace/[id]/membros', params: { id, aba: 'membros' } })} />
               {workspace.role === 'admin' ? (
-                <Item icon="send" label="Convites" active={current === 'convites'} onPress={() => go({ pathname: '/workspace/[id]/convites', params: { id } })} />
+                <>
+                  <Item icon="send" label="Convites" active={current === 'convites'} onPress={() => go({ pathname: '/workspace/[id]/membros', params: { id, aba: 'convites' } })} />
+                  <Item icon="settings" label="Configuração" active={current === 'configuracao'} onPress={() => go({ pathname: '/workspace/[id]/configuracao', params: { id } })} />
+                </>
               ) : null}
             </>
           ) : null}

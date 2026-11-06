@@ -4,7 +4,7 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export const PASSWORD_HINT =
-  'Mínimo de 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.';
+  'De 8 a 24 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.';
 
 export function isValidEmail(email: string): boolean {
   return EMAIL_RE.test(email.trim());
@@ -13,6 +13,7 @@ export function isValidEmail(email: string): boolean {
 /** Mesmas regras de PasswordHasher.IsStrong no backend. */
 export function passwordError(password: string): string | null {
   if (!password || password.length < 8) return 'A senha deve conter no mínimo 8 caracteres.';
+  if (password.length > 24) return 'A senha deve conter no máximo 24 caracteres.';
   if (!/[A-ZÀ-Ý]/.test(password)) return 'A senha deve conter pelo menos uma letra maiúscula.';
   if (!/[a-zß-ÿ]/.test(password)) return 'A senha deve conter pelo menos uma letra minúscula.';
   if (!/\d/.test(password)) return 'A senha deve conter pelo menos um número.';
@@ -78,4 +79,53 @@ export function validateEntry(f: { title: string; category: string | null; descr
 /** Normaliza o código digitado: aceita com ou sem hífen e em minúsculas. */
 export function normalizeCode(code: string): string {
   return code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+/** Mantém só dígitos e aplica a máscara (61) 99999-0000 enquanto a pessoa digita. */
+export function maskPhone(raw: string): string {
+  const d = raw.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : '';
+  const area = `(${d.slice(0, 2)}) `;
+  const rest = d.slice(2);
+  return rest.length <= 4 ? area + rest : area + rest.slice(0, rest.length - 4) + '-' + rest.slice(-4);
+}
+
+/** Aplica a máscara DD/MM/AAAA enquanto a pessoa digita. */
+export function maskDate(raw: string): string {
+  const d = raw.replace(/\D/g, '').slice(0, 8);
+  if (d.length <= 2) return d;
+  if (d.length <= 4) return `${d.slice(0, 2)}/${d.slice(2)}`;
+  return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
+}
+
+/** AAAA-MM-DD → DD/MM/AAAA. Vazio fica vazio. */
+export function isoToDisplay(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+}
+
+/** DD/MM/AAAA → AAAA-MM-DD, ou null se a data não existir no calendário. */
+export function displayToIso(display: string): string | null {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(display);
+  if (!m) return null;
+  const [day, month, year] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const real = date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  return real ? `${m[3]}-${m[2]}-${m[1]}` : null;
+}
+
+/** Mesmas regras do servidor (ProfileRules): telefone com DDD, nascimento válido e não futuro. */
+export function validateProfile(f: { name: string; phone: string; birthDate: string }): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!f.name.trim()) e.name = 'Informe seu nome completo.';
+  const digits = f.phone.replace(/\D/g, '');
+  if (digits && (![10, 11].includes(digits.length) || digits.startsWith('0')))
+    e.phone = 'Informe o telefone com DDD, por exemplo (61) 99999-0000.';
+  if (f.birthDate) {
+    const iso = displayToIso(f.birthDate);
+    if (!iso) e.birthDate = 'Informe uma data válida, no formato DD/MM/AAAA.';
+    else if (iso > new Date().toISOString().slice(0, 10)) e.birthDate = 'A data de nascimento não pode estar no futuro.';
+    else if (iso < '1900-01-01') e.birthDate = 'Informe uma data de nascimento válida.';
+  }
+  return e;
 }

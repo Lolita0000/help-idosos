@@ -8,6 +8,7 @@ import { AuthHeader } from '../components/AuthHeader';
 import { Alert, Button, Card, Field, LinkText, Screen, T } from '../components/ui';
 import { messageOf } from '../core';
 import { validateLogin } from '../core/validation';
+import { useFieldChain } from '../hooks';
 import { useSession } from '../session';
 import { colors } from '../theme';
 
@@ -19,6 +20,7 @@ export default function Login() {
   const [failure, setFailure] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const chain = useFieldChain(1, () => void submit());
   if (user) return <Redirect href="/workspaces" />;
 
   async function submit() {
@@ -63,6 +65,7 @@ export default function Login() {
             autoComplete="email"
             textContentType="emailAddress"
             error={errors.email}
+            {...chain(0)}
           />
           <Field
             label="Senha:"
@@ -74,6 +77,7 @@ export default function Login() {
             autoComplete="password"
             textContentType="password"
             error={errors.password}
+            {...chain(1)}
           />
           {failure ? <Alert message={failure} /> : null}
           <Button title="Entrar" onPress={submit} loading={loading} style={{ marginTop: 8 }} />
