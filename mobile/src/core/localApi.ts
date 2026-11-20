@@ -442,7 +442,7 @@ export const localApi: EloApi = {
   },
 
   // HU-03 (lado do administrador)
-  async createInvite(token, workspaceId) {
+  async createInvite(token, workspaceId, forSubject = false) {
     const db = await load();
     const user = requireUser(db, token);
     const me = requireMember(db, user.id, workspaceId);
@@ -457,6 +457,7 @@ export const localApi: EloApi = {
       code,
       createdAt: created.toISOString(),
       expiresAt: new Date(created.getTime() + INVITE_HOURS * 3600_000).toISOString(),
+      forSubject,
     };
     db.invites.push(invite);
     await save(db);
@@ -494,8 +495,14 @@ export const localApi: EloApi = {
       throw new ApiError('INVITE_INVALID', 'Código inválido. Verifique o código e tente novamente.');
     if (db.members.some((m) => m.workspaceId === ws.id && m.userId === user.id))
       throw new ApiError('ALREADY_MEMBER', 'Você já faz parte deste workspace.');
-    // RN-004: entra como membro com papel padrão.
-    db.members.push({ workspaceId: ws.id, userId: user.id, role: 'member', joinedAt: now() });
+    // RN-004: entra como membro com papel padrão. O convite da pessoa acompanhada (HU-11)
+    // marca quem entra, tira a marca de quem tinha (RN-002) e é de uma pessoa só.
+    const forSubject = invite.forSubject === true;
+    if (forSubject) {
+      for (const m of db.members) if (m.workspaceId === ws.id) m.isSubject = false;
+      invite.expiresAt = new Date().toISOString();
+    }
+    db.members.push({ workspaceId: ws.id, userId: user.id, role: 'member', isSubject: forSubject, joinedAt: now() });
     await save(db);
     return summary(db, ws, 'member');
   },

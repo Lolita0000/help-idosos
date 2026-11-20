@@ -14,7 +14,8 @@ export function ConvitesTab({ ws }: { ws: WorkspaceDetail }) {
   const { token, handleAuthError } = useSession();
   const isAdmin = ws.role === 'admin';
   const { data: invites, error, loading, reload } = useLoad(async (t) => (isAdmin ? api.listInvites(t, ws.id) : []));
-  const [creating, setCreating] = useState(false);
+  // Qual dos dois botões está gerando, para só ele mostrar o carregando.
+  const [creating, setCreating] = useState<'normal' | 'subject' | null>(null);
   const [notice, setNotice] = useTransient();
   const [failure, setFailure] = useTransient();
   const [toDelete, setToDelete] = useState<InviteCode | null>(null);
@@ -29,18 +30,22 @@ export function ConvitesTab({ ws }: { ws: WorkspaceDetail }) {
     );
   }
 
-  async function generate() {
-    if (!token) return;
-    setCreating(true);
+  async function generate(forSubject: boolean) {
+    if (!token || creating) return;
+    setCreating(forSubject ? 'subject' : 'normal');
     setFailure(null);
     try {
-      const inv = await api.createInvite(token, ws.id);
-      setNotice(`Código ${formatCode(inv.code)} gerado. Ele vale por 24 horas.`);
+      const inv = await api.createInvite(token, ws.id, forSubject);
+      setNotice(
+        forSubject
+          ? `Código ${formatCode(inv.code)} gerado para a pessoa acompanhada. Vale por 24 horas e só pode ser usado uma vez.`
+          : `Código ${formatCode(inv.code)} gerado. Ele vale por 24 horas.`,
+      );
       await reload();
     } catch (e) {
       if (!handleAuthError(e)) setFailure(messageOf(e));
     } finally {
-      setCreating(false);
+      setCreating(null);
     }
   }
 
@@ -50,7 +55,9 @@ export function ConvitesTab({ ws }: { ws: WorkspaceDetail }) {
   }
 
   async function share(inv: InviteCode) {
-    const message = `Você foi convidado para o workspace “${ws.name}” no Elo de Cuidado. Abra o app, toque em “Entrar com código” e use: ${formatCode(inv.code)} (válido por 24 horas).`;
+    const message = inv.forSubject
+      ? `Você foi convidado como a pessoa acompanhada do workspace “${ws.name}” no Elo de Cuidado. Abra o app, toque em “Entrar com código” e use: ${formatCode(inv.code)} (válido por 24 horas e só pode ser usado uma vez).`
+      : `Você foi convidado para o workspace “${ws.name}” no Elo de Cuidado. Abra o app, toque em “Entrar com código” e use: ${formatCode(inv.code)} (válido por 24 horas).`;
     if (Platform.OS === 'web') {
       await Clipboard.setStringAsync(message);
       setNotice('Convite copiado. Cole na conversa com a pessoa convidada.');
@@ -99,7 +106,18 @@ export function ConvitesTab({ ws }: { ws: WorkspaceDetail }) {
       <T size={16} color={colors.textMuted} style={styles.justify}>
         Gerencie códigos de convite para adicionar novos membros
       </T>
-      <Button title="+ Gerar Código" small loading={creating} onPress={generate} style={{ alignSelf: 'flex-start', marginTop: 14 }} />
+      <View style={styles.generateRow}>
+        <Button title="+ Gerar Código" small loading={creating === 'normal'} disabled={!!creating} onPress={() => void generate(false)} />
+        <Button
+          title="Código da pessoa acompanhada"
+          icon="heart"
+          variant="outline"
+          small
+          loading={creating === 'subject'}
+          disabled={!!creating}
+          onPress={() => void generate(true)}
+        />
+      </View>
 
       <View style={styles.how}>
         <View style={styles.howIcon}>
@@ -112,6 +130,10 @@ export function ConvitesTab({ ws }: { ws: WorkspaceDetail }) {
           <T size={14} color={colors.textSoft} style={[styles.justify, { marginTop: 4 }]}>
             Gere um código de convite e compartilhe com a pessoa que deseja adicionar ao workspace. Ela poderá usar o código na
             tela de workspaces, em “Entrar com código”. Cada código vale por 24 horas.
+          </T>
+          <T size={14} color={colors.textSoft} style={[styles.justify, { marginTop: 8 }]}>
+            O código da pessoa acompanhada marca quem entrar com ele como a pessoa acompanhada do workspace, e só pode ser usado
+            uma vez.
           </T>
         </View>
       </View>
@@ -137,6 +159,14 @@ export function ConvitesTab({ ws }: { ws: WorkspaceDetail }) {
               </T>
               <Badge label={expired ? 'Expirado' : 'Ativo'} tone={expired ? 'expired' : 'active'} />
             </View>
+            {inv.forSubject ? (
+              <View style={styles.subjectTag}>
+                <Feather name="heart" size={12} color={colors.primary} />
+                <T w="semibold" size={12} color={colors.primary} style={{ marginLeft: 4 }}>
+                  Para a pessoa acompanhada
+                </T>
+              </View>
+            ) : null}
             <T size={13} color={colors.textMuted}>
               Criado em {longDateTime(inv.createdAt)}
             </T>
@@ -194,6 +224,17 @@ function IconBtn({
 const styles = StyleSheet.create({
   pad: { paddingHorizontal: 22, paddingTop: 20 },
   justify: { textAlign: 'justify', marginTop: 4 },
+  generateRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 },
+  subjectTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: colors.primarySoft,
+  },
   how: {
     flexDirection: 'row',
     backgroundColor: colors.primarySoft,

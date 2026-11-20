@@ -65,6 +65,8 @@ export interface InviteCode {
   code: string;
   createdAt: string;
   expiresAt: string;
+  /** Convite da pessoa acompanhada (HU-11): quem entrar já vem marcada como tal e o código serve uma vez. */
+  forSubject: boolean;
 }
 
 export interface RegisterInput {
@@ -145,7 +147,7 @@ export interface EloApi {
   /** Marca ou desmarca quem é a pessoa acompanhada (RN-002). Marcar alguém desmarca o anterior. Só o administrador. */
   setSubject(token: string, workspaceId: string, userId: string, isSubject: boolean): Promise<void>;
   listInvites(token: string, workspaceId: string): Promise<InviteCode[]>;
-  createInvite(token: string, workspaceId: string): Promise<InviteCode>;
+  createInvite(token: string, workspaceId: string, forSubject?: boolean): Promise<InviteCode>;
   deleteInvite(token: string, inviteId: string): Promise<void>;
   joinWithCode(token: string, code: string): Promise<WorkspaceSummary>;
   /** Entradas do workspace, da mais recente para a mais antiga. */

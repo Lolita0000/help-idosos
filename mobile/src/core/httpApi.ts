@@ -55,6 +55,7 @@ interface InviteDto {
   code: string;
   expiresAt: string;
   createdAt: string;
+  forSubject: boolean;
 }
 interface AuthDto {
   token: string;
@@ -128,6 +129,7 @@ const toInvite = (i: InviteDto): InviteCode => ({
   code: i.code,
   createdAt: utc(i.createdAt),
   expiresAt: utc(i.expiresAt),
+  forSubject: i.forSubject === true,
 });
 
 const toEntry = (e: DiaryEntryDto): DiaryEntry => ({
@@ -372,8 +374,10 @@ export function createHttpApi(baseUrl: string): EloApi {
       return list.map(toInvite);
     },
 
-    async createInvite(token, workspaceId) {
-      return toInvite(await call<InviteDto>('POST', '/api/invite-code', token, { workspaceId: Number(workspaceId) }));
+    async createInvite(token, workspaceId, forSubject = false) {
+      return toInvite(
+        await call<InviteDto>('POST', '/api/invite-code', token, { workspaceId: Number(workspaceId), forSubject }),
+      );
     },
 
     async deleteInvite(token, id) {

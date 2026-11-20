@@ -60,7 +60,7 @@ export default function CriarWorkspace() {
         placeholder="Ex: Carla da Silva"
         autoCapitalize="words"
         error={errors.subjectName}
-        helper="O sujeito não recebe convite automático. Para dar acesso a ele, gere um código de convite depois."
+        helper="O sujeito não recebe convite automático. Se ele usa o app, gere depois, em Convites, o “Código da pessoa acompanhada”: quem entrar com ele já fica marcada como o sujeito."
         maxLength={100}
         {...chain(2)}
       />
