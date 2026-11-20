@@ -66,6 +66,8 @@ interface MemberRow {
   workspaceId: string;
   userId: string;
   role: Role;
+  /** Ausente em dados salvos antes da HU-11: vale como falso. */
+  isSubject?: boolean;
   joinedAt: string;
 }
 type EntryRow = Omit<DiaryEntry, 'authorName'>;
@@ -168,7 +170,11 @@ function summary(db: Db, ws: WorkspaceRow, role: Role): WorkspaceSummary {
 }
 
 function toEntry(db: Db, e: EntryRow): DiaryEntry {
-  return { ...e, authorName: db.users.find((u) => u.id === e.authorId)?.name ?? 'Usuário removido' };
+  return {
+    ...e,
+    fromSubject: e.fromSubject === true,
+    authorName: db.users.find((u) => u.id === e.authorId)?.name ?? 'Usuário removido',
+  };
 }
 
 function findEntry(db: Db, entryId: string): EntryRow {
@@ -340,6 +346,7 @@ export const localApi: EloApi = {
           name: u?.name ?? 'Usuário removido',
           email: u?.email ?? '',
           role: m.role,
+          isSubject: m.isSubject === true,
           joinedAt: m.joinedAt,
         };
       })
@@ -408,6 +415,18 @@ export const localApi: EloApi = {
     if (target.role === 'admin') throw new ApiError('VALIDATION', 'Essa pessoa já é administradora deste workspace.');
     target.role = 'admin';
     me.role = 'member';
+    await save(db);
+  },
+
+  // RN-002: uma só pessoa acompanhada por workspace; marcar alguém desmarca o anterior.
+  async setSubject(token, workspaceId, userId, isSubject) {
+    const db = await load();
+    const me = requireMember(db, requireUser(db, token).id, workspaceId);
+    if (me.role !== 'admin') throw new ApiError('FORBIDDEN', 'Apenas o administrador define a pessoa acompanhada.');
+    const target = db.members.find((m) => m.workspaceId === workspaceId && m.userId === userId);
+    if (!target) throw new ApiError('NOT_FOUND', 'Essa pessoa não participa deste workspace.');
+    if (isSubject) for (const m of db.members) if (m.workspaceId === workspaceId) m.isSubject = false;
+    target.isSubject = isSubject;
     await save(db);
   },
 
@@ -504,10 +523,12 @@ export const localApi: EloApi = {
     checkEntry(input);
     const db = await load();
     const user = requireUser(db, token);
-    requireMember(db, user.id, workspaceId);
+    const membership = requireMember(db, user.id, workspaceId);
     const entry: EntryRow = {
       id: uuid(),
       workspaceId,
+      // Vem do vínculo de quem escreve (HU-11), não do formulário.
+      fromSubject: membership.isSubject === true,
       // Autoria e horário vêm da sessão e do relógio de quem grava, não do formulário.
       authorId: user.id,
       createdAt: now(),

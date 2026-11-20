@@ -8,7 +8,7 @@ import { initials, longDate, plural } from '../core/format';
 import { useFontScale } from '../fontScale';
 import { useTransient } from '../hooks';
 import { useSession } from '../session';
-import { colors, fonts } from '../theme';
+import { colors, fonts, radius } from '../theme';
 import { Alert, Avatar, Button, Dialog, Feather, T } from './ui';
 
 type Pending = { kind: 'remove' | 'transfer'; member: Member };
@@ -60,18 +60,53 @@ export function MembrosTab({
     }
   }
 
+  /** RN-002: marca ou desmarca a pessoa acompanhada. Marcar alguém desmarca quem estava marcado. */
+  async function toggleSubject(m: Member) {
+    if (!token || busy) return;
+    setBusy(true);
+    setFailure(null);
+    try {
+      await api.setSubject(token, ws.id, m.userId, !m.isSubject);
+      setNotice(
+        m.isSubject
+          ? `${m.name} deixou de ser a pessoa acompanhada.`
+          : `${m.name} agora é a pessoa acompanhada. As entradas que ela registrar serão identificadas assim.`,
+      );
+      await onChanged();
+    } catch (e) {
+      if (!handleAuthError(e)) setFailure(messageOf(e));
+      await onChanged().catch(() => undefined);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // O administrador pode marcar qualquer participante como a pessoa acompanhada,
+  // inclusive a si mesmo. Passar a administração e remover só valem para membros comuns.
   const actions = (m: Member): ReactNode =>
     isAdmin ? (
-      <View style={styles.actions}>
+      <View style={{ marginTop: 12, gap: 10 }}>
+        {m.role === 'member' ? (
+          <View style={styles.actionsRow}>
+            <Button
+              title="Tornar administrador"
+              icon="shield"
+              variant="outline"
+              small
+              onPress={() => setPending({ kind: 'transfer', member: m })}
+              style={{ flex: 1 }}
+            />
+            <Button title="Remover" icon="user-x" variant="ghost" small onPress={() => setPending({ kind: 'remove', member: m })} />
+          </View>
+        ) : null}
         <Button
-          title="Tornar administrador"
-          icon="shield"
-          variant="outline"
+          title={m.isSubject ? 'Desmarcar pessoa acompanhada' : 'Marcar como pessoa acompanhada'}
+          icon="heart"
+          variant="ghost"
           small
-          onPress={() => setPending({ kind: 'transfer', member: m })}
-          style={{ flex: 1 }}
+          disabled={busy}
+          onPress={() => void toggleSubject(m)}
         />
-        <Button title="Remover" icon="user-x" variant="ghost" small onPress={() => setPending({ kind: 'remove', member: m })} />
       </View>
     ) : null;
 
@@ -134,7 +169,7 @@ export function MembrosTab({
         </>
       ) : null}
 
-      <Section title={`Administradores (${admins.length})`} people={admins} />
+      <Section title={`Administradores (${admins.length})`} people={admins} actions={actions} />
       <Section
         title={`Membros (${members.length})`}
         people={members}
@@ -192,6 +227,14 @@ function Section({
               <T w="medium" size={17}>
                 {p.name}
               </T>
+              {p.isSubject ? (
+                <View style={styles.subjectBadge}>
+                  <Feather name="heart" size={12} color={colors.primary} />
+                  <T w="semibold" size={12} color={colors.primary} style={{ marginLeft: 4 }}>
+                    Pessoa acompanhada
+                  </T>
+                </View>
+              ) : null}
               <T size={13} color={colors.textMuted}>
                 {p.email}
               </T>
@@ -242,6 +285,17 @@ const styles = StyleSheet.create({
   },
   personCard: { borderWidth: 1, borderColor: '#C9CED6', borderRadius: 10, padding: 12, marginBottom: 10 },
   personRow: { flexDirection: 'row', alignItems: 'center' },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  actionsRow: { flexDirection: 'row', gap: 10 },
+  subjectBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: 2,
+    marginBottom: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+  },
   subject: { backgroundColor: colors.primarySoft, borderColor: '#9DB8F2' },
 });

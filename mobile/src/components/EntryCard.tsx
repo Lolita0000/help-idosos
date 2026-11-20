@@ -55,7 +55,16 @@ export function EntryCard({
           <View style={{ width: 8 }} />
         )}
       </View>
-      <T w="medium" size={16} style={{ marginTop: 12 }}>
+      {/* HU-11: o que a própria pessoa acompanhada registrou fica identificado como tal. */}
+      {entry.fromSubject ? (
+        <View style={styles.subjectTag} accessibilityLabel="Registrada pela própria pessoa acompanhada">
+          <Feather name="heart" size={12} color={colors.primary} />
+          <T w="semibold" size={12} color={colors.primary} style={{ marginLeft: 4 }}>
+            Perspectiva da pessoa acompanhada
+          </T>
+        </View>
+      ) : null}
+      <T w="medium" size={16} style={{ marginTop: entry.fromSubject ? 8 : 12 }}>
         {entry.title}
       </T>
       <T size={15} color="#4B5563" style={{ marginTop: 6 }}>
@@ -129,6 +138,16 @@ function ActionMenu({
 }
 
 const styles = StyleSheet.create({
+  subjectTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+  },
   card: {
     backgroundColor: colors.white,
     borderWidth: 1,

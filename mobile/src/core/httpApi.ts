@@ -91,6 +91,7 @@ interface DiaryEntryDto {
   edited: boolean;
   editedAt: string | null;
   createdAt: string;
+  fromSubject: boolean;
 }
 
 /** Categoria do app → EntryLabel do backend, de 1 para 1. */
@@ -139,6 +140,7 @@ const toEntry = (e: DiaryEntryDto): DiaryEntry => ({
   description: e.content,
   createdAt: utc(e.createdAt),
   updatedAt: e.edited && e.editedAt ? utc(e.editedAt) : null,
+  fromSubject: e.fromSubject === true,
 });
 
 /**
@@ -321,15 +323,16 @@ export function createHttpApi(baseUrl: string): EloApi {
       ]);
       const detail: WorkspaceDetail = {
         ...toWorkspace(w),
-        members: members
-          .filter((m) => !m.isSubject)
-          .map<Member>((m) => ({
-            userId: String(m.userId),
-            name: m.name,
-            email: m.email,
-            role: m.role,
-            joinedAt: utc(m.joinedAt),
-          })),
+        // A pessoa acompanhada, quando tem conta, é um membro como os demais, só que
+        // marcada (RN-002): continua na lista, com o selo.
+        members: members.map<Member>((m) => ({
+          userId: String(m.userId),
+          name: m.name,
+          email: m.email,
+          role: m.role,
+          isSubject: m.isSubject === true,
+          joinedAt: utc(m.joinedAt),
+        })),
       };
       return detail;
     },
@@ -358,6 +361,10 @@ export function createHttpApi(baseUrl: string): EloApi {
 
     async transferAdmin(token, workspaceId, userId) {
       await call<void>('POST', `/api/workspaces/${workspaceId}/members/${userId}/transfer-admin`, token);
+    },
+
+    async setSubject(token, workspaceId, userId, isSubject) {
+      await call<void>(isSubject ? 'POST' : 'DELETE', `/api/workspaces/${workspaceId}/members/${userId}/subject`, token);
     },
 
     async listInvites(token, workspaceId) {

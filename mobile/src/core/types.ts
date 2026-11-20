@@ -50,6 +50,8 @@ export interface Member {
   name: string;
   email: string;
   role: Role;
+  /** Esta pessoa é a pessoa acompanhada do workspace (RN-002). No máximo uma por workspace. */
+  isSubject: boolean;
   joinedAt: string;
 }
 
@@ -106,6 +108,8 @@ export interface DiaryEntry {
   createdAt: string;
   /** Preenchido quando a entrada foi editada (RN-008). */
   updatedAt: string | null;
+  /** Registrada pela própria pessoa acompanhada (HU-11). Definido pelo servidor, nunca pelo cliente. */
+  fromSubject: boolean;
 }
 
 export interface DiaryEntryInput {
@@ -138,6 +142,8 @@ export interface EloApi {
   removeMember(token: string, workspaceId: string, userId: string): Promise<void>;
   /** Passa a administração: a pessoa vira administradora e quem passou vira membro comum. */
   transferAdmin(token: string, workspaceId: string, userId: string): Promise<void>;
+  /** Marca ou desmarca quem é a pessoa acompanhada (RN-002). Marcar alguém desmarca o anterior. Só o administrador. */
+  setSubject(token: string, workspaceId: string, userId: string, isSubject: boolean): Promise<void>;
   listInvites(token: string, workspaceId: string): Promise<InviteCode[]>;
   createInvite(token: string, workspaceId: string): Promise<InviteCode>;
   deleteInvite(token: string, inviteId: string): Promise<void>;
