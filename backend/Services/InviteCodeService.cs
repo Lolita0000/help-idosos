@@ -1,4 +1,5 @@
 ﻿using EloDeCuidado.Data;
+using EloDeCuidado.DTOs.AuditLogs;
 using EloDeCuidado.DTOs.InviteCode;
 using EloDeCuidado.Models;
 using EloDeCuidado.Services.Helpers;
@@ -57,6 +58,7 @@ public sealed class InviteCodeService(AppDbContext db) : IInviteCodeService
             WorkspaceId = request.WorkspaceId,
             Code = UniqueCodeGenerator.Generate(8),
             ExpiresAt = expiresAt,
+            ForSubject = request.ForSubject,
         };
 
         db.InviteCodes.Add(inviteCode);
@@ -125,15 +127,44 @@ public sealed class InviteCodeService(AppDbContext db) : IInviteCodeService
         if (alreadyMember)
             return new JoinResult(JoinStatus.AlreadyMember, inviteCode.WorkspaceId);
 
-        // Quem entra por convite é membro comum, qualquer que seja sua relação
-        // com o sujeito acompanhado (RN-004). Só o criador administra (RN-001).
+        // Quem entra por convite é membro comum (RN-004). Só o criador administra
+        // (RN-001). A exceção é o convite feito para a pessoa acompanhada: quem
+        // entra com ele já vem marcada como tal (HU-11, RN-002).
         db.WorkspaceMembers.Add(new WorkspaceMember
         {
             WorkspaceId = inviteCode.WorkspaceId,
             UserId = userId,
             Role = MemberRole.Member,
-            IsSubject = false,
+            IsSubject = inviteCode.ForSubject,
         });
+
+        if (inviteCode.ForSubject)
+        {
+            // Um só sujeito por workspace: quem estava marcado deixa de estar, na
+            // mesma transação (RN-002).
+            var previous = await db.WorkspaceMembers
+                .Where(m => m.WorkspaceId == inviteCode.WorkspaceId && m.IsSubject)
+                .ToListAsync();
+
+            foreach (var other in previous)
+                other.IsSubject = false;
+
+            // O convite é de uma pessoa só: usado, deixa de valer. Sem isso, qualquer
+            // pessoa que recebesse o código por engano tomaria o lugar do sujeito.
+            inviteCode.ExpiresAt = DateTime.UtcNow;
+
+            db.AuditLogs.Add(new AuditLog
+            {
+                WorkspaceId = inviteCode.WorkspaceId,
+                // Quem respondeu pela ação: a pessoa que entrou e passou a ser o sujeito.
+                UserId = userId,
+                Action = AuditLogService.NameOf(AuditAction.SubjectChanged),
+                Entity = AuditLogService.NameOf(AuditEntity.WorkspaceMember),
+                EntityId = userId,
+                Timestamp = DateTime.UtcNow,
+            });
+        }
+
         await db.SaveChangesAsync();
 
         return new JoinResult(JoinStatus.Joined, inviteCode.WorkspaceId);

@@ -21,4 +21,12 @@ public sealed class InviteCode
     public DateTime ExpiresAt { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Convite destinado à pessoa acompanhada (HU-11, RN-002). Quem entra com ele
+    /// já passa a ser a pessoa acompanhada do workspace, sem o administrador ter
+    /// de marcar depois, e o código deixa de valer logo em seguida: um convite
+    /// desses é de uma pessoa só, para outra não tomar o lugar dela.
+    /// </summary>
+    public bool ForSubject { get; set; }
 }

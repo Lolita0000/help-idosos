@@ -131,6 +131,9 @@ namespace EloDeCuidado.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("ForSubject")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<int>("WorkspaceId")
                         .HasColumnType("int");
 

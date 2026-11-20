@@ -16,4 +16,10 @@ public class CreateInviteCodeRequest
     /// ajustados para 24 horas.
     /// </summary>
     public DateTime? ExpiresAt { get; set; }
+
+    /// <summary>
+    /// Opcional. Quando verdadeiro, o código é para a pessoa acompanhada: quem
+    /// entrar com ele já passa a ser marcada como tal, e o código só serve uma vez.
+    /// </summary>
+    public bool ForSubject { get; set; }
 }

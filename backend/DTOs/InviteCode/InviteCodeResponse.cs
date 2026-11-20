@@ -8,5 +8,6 @@ public sealed record InviteCodeResponse(
     int WorkspaceId,
     string Code,
     DateTime ExpiresAt,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    bool ForSubject = false
 );

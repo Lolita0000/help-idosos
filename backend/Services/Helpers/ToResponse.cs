@@ -24,5 +24,5 @@ public static class ToResponse
     /// <returns>Um objeto InviteCodeResponse contendo os dados do código de convite</returns>
     public static InviteCodeResponse InviteCode(InviteCode inviteCode) =>
         new(inviteCode.Id, inviteCode.WorkspaceId, inviteCode.Code, inviteCode.ExpiresAt,
-            inviteCode.CreatedAt);
+            inviteCode.CreatedAt, inviteCode.ForSubject);
 }

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using EloDeCuidado.Controllers;
 using EloDeCuidado.Data;
 using EloDeCuidado.DTOs.DiaryEntries;
+using EloDeCuidado.DTOs.InviteCode;
 using EloDeCuidado.DTOs.Users;
 using EloDeCuidado.Models;
 using EloDeCuidado.Services;
@@ -360,6 +361,118 @@ public class WorkspaceMembersTests : IAsyncLifetime
         Assert.True(editada.Entry!.FromSubject);
         Assert.Equal(DiaryEntryStatus.Invalid, invalida.Status);
         Assert.Equal(DiaryEntryStatus.NotAuthor, alheia.Status);
+    }
+
+    // Convite para a pessoa acompanhada (HU-11, RN-002)
+
+    private InviteCodeService Convites() => new(_db);
+
+    private async Task<string> GerarConviteAsync(bool paraSujeito)
+    {
+        var criado = await Convites().CreateAsync(new CreateInviteCodeRequest
+        {
+            WorkspaceId = _workspaceId,
+            ForSubject = paraSujeito,
+        });
+
+        Assert.Equal(paraSujeito, criado!.ForSubject);
+        return criado.Code;
+    }
+
+    [Fact]
+    public async Task Convite_ParaSujeito_QuemEntraJaSaiMarcada_ComoMembroComum()
+    {
+        var codigo = await GerarConviteAsync(paraSujeito: true);
+
+        var resultado = await Convites().JoinAsync(codigo, _estranhoId);
+
+        Assert.Equal(JoinStatus.Joined, resultado.Status);
+        var vinculo = await _db.WorkspaceMembers.SingleAsync(m => m.WorkspaceId == _workspaceId && m.UserId == _estranhoId);
+        Assert.True(vinculo.IsSubject);
+        Assert.Equal(MemberRole.Member, vinculo.Role);
+    }
+
+    [Fact]
+    public async Task Convite_ParaSujeito_TiraAMarcaDeQuemJaEra()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+        var codigo = await GerarConviteAsync(paraSujeito: true);
+
+        await Convites().JoinAsync(codigo, _estranhoId);
+
+        Assert.False(await EhSujeitoAsync(_juliaId));
+        Assert.True(await EhSujeitoAsync(_estranhoId));
+        Assert.Equal(1, await _db.WorkspaceMembers.CountAsync(m => m.WorkspaceId == _workspaceId && m.IsSubject));
+    }
+
+    [Fact]
+    public async Task Convite_ParaSujeito_ServeUmaVezSo()
+    {
+        var outro = new User { Name = "Pedro Alves", Email = "pedro@teste.com", PasswordHash = "hash" };
+        _db.Users.Add(outro);
+        await _db.SaveChangesAsync();
+        var codigo = await GerarConviteAsync(paraSujeito: true);
+
+        await Convites().JoinAsync(codigo, _estranhoId);
+        var segundo = await Convites().JoinAsync(codigo, outro.Id);
+
+        Assert.Equal(JoinStatus.Expired, segundo.Status);
+        Assert.False(await _db.WorkspaceMembers.AnyAsync(m => m.WorkspaceId == _workspaceId && m.UserId == outro.Id));
+        Assert.True(await EhSujeitoAsync(_estranhoId));
+    }
+
+    [Fact]
+    public async Task Convite_Comum_NaoMarcaNinguem_ECodigoContinuaValendo()
+    {
+        var outro = new User { Name = "Pedro Alves", Email = "pedro@teste.com", PasswordHash = "hash" };
+        _db.Users.Add(outro);
+        await _db.SaveChangesAsync();
+        var codigo = await GerarConviteAsync(paraSujeito: false);
+
+        await Convites().JoinAsync(codigo, _estranhoId);
+        var segundo = await Convites().JoinAsync(codigo, outro.Id);
+
+        Assert.Equal(JoinStatus.Joined, segundo.Status);
+        Assert.False(await EhSujeitoAsync(_estranhoId));
+        Assert.False(await EhSujeitoAsync(outro.Id));
+        Assert.Empty(_db.AuditLogs);
+    }
+
+    [Fact]
+    public async Task Convite_ParaSujeito_QuemJaEhMembro_NaoMudaNada_ENaoGastaOCodigo()
+    {
+        var codigo = await GerarConviteAsync(paraSujeito: true);
+
+        var resultado = await Convites().JoinAsync(codigo, _robertoId);
+
+        Assert.Equal(JoinStatus.AlreadyMember, resultado.Status);
+        Assert.False(await EhSujeitoAsync(_robertoId));
+        // Continua valendo para a pessoa certa.
+        Assert.Equal(JoinStatus.Joined, (await Convites().JoinAsync(codigo, _estranhoId)).Status);
+    }
+
+    [Fact]
+    public async Task Convite_ParaSujeito_RegistraNaAuditoria_QuemPassouASerOSujeito()
+    {
+        var codigo = await GerarConviteAsync(paraSujeito: true);
+
+        await Convites().JoinAsync(codigo, _estranhoId);
+
+        var log = Assert.Single(_db.AuditLogs);
+        Assert.Equal("workspace_member.subject_changed", log.Action);
+        Assert.Equal(_estranhoId, log.EntityId);
+        Assert.Equal(_estranhoId, log.UserId);
+    }
+
+    [Fact]
+    public async Task Convite_ParaSujeito_AEntradaDaPessoaQueEntrouSaiComAPerspectivaDela()
+    {
+        var codigo = await GerarConviteAsync(paraSujeito: true);
+        await Convites().JoinAsync(codigo, _estranhoId);
+
+        var entrada = await RegistrarAsync(_estranhoId, "Meu primeiro relato");
+
+        Assert.True(entrada.Entry!.FromSubject);
     }
 
     // Conciliação com RN-012: quem passou a administração pode excluir a conta
