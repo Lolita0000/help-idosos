@@ -84,12 +84,19 @@ public sealed class DiaryEntryService(
         if (!TryNormalizeMood(label, request.MoodLevel, out var mood, out var moodError))
             return Invalid(moodError!);
 
-        if (!await IsMemberAsync(request.WorkspaceId, authorId))
+        var membership = await db.WorkspaceMembers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.WorkspaceId == request.WorkspaceId && m.UserId == authorId);
+
+        if (membership is null)
             return new DiaryEntryResult(DiaryEntryStatus.NotMember);
 
         var entry = new DiaryEntry
         {
             WorkspaceId = request.WorkspaceId,
+            // Calculado aqui, a partir do vínculo de quem escreve (HU-11): o
+            // cliente não decide se fala pela pessoa acompanhada.
+            FromSubject = membership.IsSubject,
             // Vem do token, nunca do corpo da requisição: a autoria decide quem
             // pode editar depois (RN-008).
             AuthorId = authorId,
@@ -281,5 +288,6 @@ public sealed class DiaryEntryService(
             entry.MoodLevel,
             entry.Status == EntryStatus.Edited,
             entry.EditedAt,
-            entry.CreatedAt);
+            entry.CreatedAt,
+            entry.FromSubject);
 }

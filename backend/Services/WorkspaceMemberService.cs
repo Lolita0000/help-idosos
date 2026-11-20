@@ -77,4 +77,34 @@ public sealed class WorkspaceMemberService(AppDbContext db, IAuditLogService aud
 
         return Done;
     }
+
+    /// <inheritdoc />
+    public async Task<MemberChangeResult> SetSubjectAsync(int workspaceId, int targetUserId, int requesterId, bool isSubject)
+    {
+        var team = await db.WorkspaceMembers.Where(m => m.WorkspaceId == workspaceId).ToListAsync();
+
+        if (team.FirstOrDefault(m => m.UserId == requesterId) is not { Role: MemberRole.Admin })
+            return Forbidden;
+
+        var target = team.FirstOrDefault(m => m.UserId == targetUserId);
+
+        if (target is null)
+            return TargetNotFound;
+
+        // Já está como foi pedido: nada a gravar, e nada a auditar.
+        if (target.IsSubject == isSubject)
+            return Done;
+
+        // Um só sujeito por workspace: quem estava marcado deixa de estar, na
+        // mesma transação (RN-002).
+        if (isSubject)
+            foreach (var other in team.Where(m => m.IsSubject))
+                other.IsSubject = false;
+
+        target.IsSubject = isSubject;
+        auditLog.Record(workspaceId, requesterId, AuditAction.SubjectChanged, AuditEntity.WorkspaceMember, targetUserId);
+        await db.SaveChangesAsync();
+
+        return Done;
+    }
 }

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using EloDeCuidado.Controllers;
 using EloDeCuidado.Data;
+using EloDeCuidado.DTOs.DiaryEntries;
 using EloDeCuidado.DTOs.Users;
 using EloDeCuidado.Models;
 using EloDeCuidado.Services;
@@ -230,6 +231,135 @@ public class WorkspaceMembersTests : IAsyncLifetime
         Assert.Equal(MemberRole.Admin, await PapelAsync(_workspaceId, _adminId));
         Assert.Equal(MemberRole.Member, await PapelAsync(_workspaceId, _juliaId));
         Assert.Empty(_db.AuditLogs);
+    }
+
+    // Sujeito acompanhado (RN-002, HU-11)
+
+    private Task<bool> EhSujeitoAsync(int userId) =>
+        _db.WorkspaceMembers
+            .Where(m => m.WorkspaceId == _workspaceId && m.UserId == userId)
+            .Select(m => m.IsSubject)
+            .SingleAsync();
+
+    private DiaryEntryService Diario() => new(_db, new WorkspaceService(_db), new AuditLogService(_db));
+
+    private Task<DiaryEntryResult> RegistrarAsync(int autorId, string titulo) =>
+        Diario().CreateAsync(new(_workspaceId, titulo, "Dormi bem e me senti disposta.", "mood", null), autorId);
+
+    [Fact]
+    public async Task Sujeito_AdministradorMarcaUmMembro_ERegistraNaAuditoria()
+    {
+        var resultado = await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+
+        Assert.IsType<NoContentResult>(resultado);
+        Assert.True(await EhSujeitoAsync(_juliaId));
+        var log = Assert.Single(_db.AuditLogs);
+        Assert.Equal("workspace_member.subject_changed", log.Action);
+        Assert.Equal(_juliaId, log.EntityId);
+    }
+
+    [Fact]
+    public async Task Sujeito_MarcarOutro_DesmarcaOAnterior()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _robertoId);
+
+        Assert.False(await EhSujeitoAsync(_juliaId));
+        Assert.True(await EhSujeitoAsync(_robertoId));
+        Assert.Equal(1, await _db.WorkspaceMembers.CountAsync(m => m.WorkspaceId == _workspaceId && m.IsSubject));
+    }
+
+    [Fact]
+    public async Task Sujeito_AdministradorPodeSerOSujeito()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _adminId);
+
+        Assert.True(await EhSujeitoAsync(_adminId));
+    }
+
+    [Fact]
+    public async Task Sujeito_Desmarcar_DeixaOWorkspaceSemSujeitoMarcado()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+
+        var resultado = await ComoUsuario(_adminId).UnmarkSubject(_workspaceId, _juliaId);
+
+        Assert.IsType<NoContentResult>(resultado);
+        Assert.False(await EhSujeitoAsync(_juliaId));
+    }
+
+    [Fact]
+    public async Task Sujeito_RepetirOMesmoPedido_NaoAuditaDeNovo()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+
+        Assert.Single(_db.AuditLogs);
+    }
+
+    [Fact]
+    public async Task Sujeito_RecusaQuemNaoAdministra_EQuemNaoParticipa()
+    {
+        Assert.IsType<ForbidResult>(await ComoUsuario(_juliaId).MarkSubject(_workspaceId, _juliaId));
+        Assert.IsType<ForbidResult>(await ComoUsuario(_estranhoId).MarkSubject(_workspaceId, _juliaId));
+        Assert.IsType<NotFoundObjectResult>(await ComoUsuario(_adminId).MarkSubject(_workspaceId, _estranhoId));
+
+        Assert.False(await EhSujeitoAsync(_juliaId));
+        Assert.Empty(_db.AuditLogs);
+    }
+
+    [Fact]
+    public async Task Entrada_DoSujeito_SaiIdentificadaComoDaPerspectivaDele()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+
+        var dela = await RegistrarAsync(_juliaId, "Como me sinto hoje");
+        var doAdmin = await RegistrarAsync(_adminId, "Observacao do cuidador");
+
+        Assert.True(dela.Entry!.FromSubject);
+        Assert.False(doAdmin.Entry!.FromSubject);
+        // Todos os membros enxergam as duas no histórico, cada uma com a sua marca.
+        var lista = await Diario().GetByWorkspaceAsync(_workspaceId, _robertoId);
+        Assert.Equal(2, lista!.Count);
+        Assert.Single(lista, e => e.FromSubject);
+    }
+
+    [Fact]
+    public async Task Entrada_DeQuemNaoEhSujeito_NaoCarregaAMarca()
+    {
+        var resultado = await RegistrarAsync(_juliaId, "Observacao comum");
+
+        Assert.False(resultado.Entry!.FromSubject);
+    }
+
+    [Fact]
+    public async Task Entrada_ContinuaDoSujeito_DepoisQueOutraPessoaPassaASer()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+        var antiga = await RegistrarAsync(_juliaId, "Registrada quando eu era o sujeito");
+
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _robertoId);
+        var depois = await RegistrarAsync(_juliaId, "Agora sou so membro");
+
+        var lista = await Diario().GetByWorkspaceAsync(_workspaceId, _adminId);
+        Assert.True(lista!.Single(e => e.Id == antiga.Entry!.Id).FromSubject);
+        Assert.False(lista!.Single(e => e.Id == depois.Entry!.Id).FromSubject);
+    }
+
+    [Fact]
+    public async Task Entrada_DoSujeito_EditarNaoMudaAMarca_EOsMesmosFluxosValem()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+        var criada = await RegistrarAsync(_juliaId, "Primeira versao");
+
+        var editada = await Diario().UpdateAsync(criada.Entry!.Id, new(null, "Segunda versao", null, null), _juliaId);
+        var invalida = await Diario().CreateAsync(new(_workspaceId, "  ", "texto", "mood", null), _juliaId);
+        var alheia = await Diario().UpdateAsync(criada.Entry.Id, new(null, "Invasao", null, null), _robertoId);
+
+        Assert.Equal(DiaryEntryStatus.Ok, editada.Status);
+        Assert.True(editada.Entry!.FromSubject);
+        Assert.Equal(DiaryEntryStatus.Invalid, invalida.Status);
+        Assert.Equal(DiaryEntryStatus.NotAuthor, alheia.Status);
     }
 
     // Conciliação com RN-012: quem passou a administração pode excluir a conta

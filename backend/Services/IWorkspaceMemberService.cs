@@ -42,4 +42,16 @@ public interface IWorkspaceMemberService
     /// quem passou vira membro comum, na mesma transação.
     /// </summary>
     Task<MemberChangeResult> TransferAdminAsync(int workspaceId, int targetUserId, int requesterId);
+
+    /// <summary>
+    /// Marca, ou desmarca, um participante como a pessoa acompanhada do workspace
+    /// (RN-002). Só um participante fica marcado por vez: marcar alguém desmarca
+    /// quem estava marcado antes.
+    /// </summary>
+    /// <remarks>
+    /// Ficar sem ninguém marcado é válido: a pessoa acompanhada nem sempre tem
+    /// conta no app, e então é identificada só pelo nome do workspace. As entradas
+    /// que o sujeito registrou continuam identificadas como dele depois da troca.
+    /// </remarks>
+    Task<MemberChangeResult> SetSubjectAsync(int workspaceId, int targetUserId, int requesterId, bool isSubject);
 }

@@ -60,6 +60,18 @@ public sealed class DiaryEntry
     [Required]
     public EntryStatus Status { get; set; } = EntryStatus.Active;
 
+    /// <summary>
+    /// Indica que a entrada foi registrada pela própria pessoa acompanhada, ou
+    /// seja, pela perspectiva do sujeito (HU-11, RN-002).
+    /// </summary>
+    /// <remarks>
+    /// Gravado no momento do registro, a partir do vínculo de quem escreve, e
+    /// nunca informado pelo cliente. Fica gravado na entrada, e não deduzido na
+    /// leitura, para que mudar depois quem é o sujeito não reescreva a história:
+    /// o que foi dito pela pessoa acompanhada continua sendo dela.
+    /// </remarks>
+    public bool FromSubject { get; set; }
+
     /// <summary>Momento da última alteração, nulo enquanto a entrada não for editada.</summary>
     public DateTime? EditedAt { get; set; }
 

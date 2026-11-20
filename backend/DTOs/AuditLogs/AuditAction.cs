@@ -26,6 +26,9 @@ public enum AuditAction
 
     /// <summary>Administração do workspace passada a outro participante (RN-010).</summary>
     AdminTransferred,
+
+    /// <summary>Participante marcado ou desmarcado como a pessoa acompanhada (RN-002, RN-010).</summary>
+    SubjectChanged,
 }
 
 /// <summary>

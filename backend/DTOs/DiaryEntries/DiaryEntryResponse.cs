@@ -17,6 +17,9 @@ namespace EloDeCuidado.DTOs.DiaryEntries;
 /// <param name="Edited">Indica se a entrada foi alterada depois de registrada.</param>
 /// <param name="EditedAt">Momento da última alteração, nulo se nunca foi editada.</param>
 /// <param name="CreatedAt">Momento do registro.</param>
+/// <param name="FromSubject">
+/// Verdadeiro quando a entrada foi registrada pela própria pessoa acompanhada (HU-11).
+/// </param>
 public sealed record DiaryEntryResponse(
     int Id,
     int WorkspaceId,
@@ -28,5 +31,6 @@ public sealed record DiaryEntryResponse(
     int? MoodLevel,
     bool Edited,
     DateTime? EditedAt,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    bool FromSubject = false
 );

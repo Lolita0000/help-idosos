@@ -80,6 +80,7 @@ public sealed class AuditLogService(AppDbContext db) : IAuditLogService
         AuditAction.DiaryEntryDeleted => "diary_entry.deleted",
         AuditAction.MemberRemoved => "workspace_member.removed",
         AuditAction.AdminTransferred => "workspace_member.admin_transferred",
+        AuditAction.SubjectChanged => "workspace_member.subject_changed",
         _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ação de auditoria sem nome definido."),
     };
 

@@ -72,6 +72,61 @@ public sealed class WorkspaceMembersController(IWorkspaceMemberService members) 
         return Translate(await members.TransferAdminAsync(workspaceId, userId, requesterId.Value));
     }
 
+    /// <summary>
+    /// Marca um participante como a pessoa acompanhada do workspace (RN-002).
+    /// </summary>
+    /// <remarks>
+    /// Só um participante fica marcado por vez; marcar alguém desmarca o anterior.
+    /// Depois disso, as entradas que a pessoa registrar são identificadas como
+    /// vindas da perspectiva da pessoa acompanhada (HU-11).
+    /// </remarks>
+    /// <param name="workspaceId">Workspace.</param>
+    /// <param name="userId">Participante que é a pessoa acompanhada.</param>
+    /// <response code="204">Participante marcado.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    /// <response code="403">O usuário não administra este workspace (ou ele não existe).</response>
+    /// <response code="404">A pessoa não participa do workspace.</response>
+    [HttpPost("{userId:int}/subject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MarkSubject(int workspaceId, int userId)
+    {
+        var requesterId = this.GetAuthenticatedUserId();
+
+        if (requesterId is null)
+            return Unauthorized();
+
+        return Translate(await members.SetSubjectAsync(workspaceId, userId, requesterId.Value, isSubject: true));
+    }
+
+    /// <summary>
+    /// Tira a marca de pessoa acompanhada de um participante.
+    /// </summary>
+    /// <remarks>
+    /// As entradas que ele já registrou como pessoa acompanhada continuam
+    /// identificadas como tal.
+    /// </remarks>
+    /// <param name="workspaceId">Workspace.</param>
+    /// <param name="userId">Participante a desmarcar.</param>
+    /// <response code="204">Participante desmarcado.</response>
+    /// <response code="401">Token ausente ou inválido.</response>
+    /// <response code="403">O usuário não administra este workspace (ou ele não existe).</response>
+    /// <response code="404">A pessoa não participa do workspace.</response>
+    [HttpDelete("{userId:int}/subject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UnmarkSubject(int workspaceId, int userId)
+    {
+        var requesterId = this.GetAuthenticatedUserId();
+
+        if (requesterId is null)
+            return Unauthorized();
+
+        return Translate(await members.SetSubjectAsync(workspaceId, userId, requesterId.Value, isSubject: false));
+    }
+
     private IActionResult Translate(MemberChangeResult result) => result.Status switch
     {
         MemberChangeStatus.Ok => NoContent(),
