@@ -55,9 +55,13 @@ export default function Configuracao() {
 
   const ws = data?.ws;
   const isAdmin = ws?.role === 'admin';
+  // Com uma conta marcada como pessoa acompanhada (HU-11), o nome dela vale e o campo não se edita aqui.
+  const subjectMember = ws?.members.find((m) => m.isSubject);
   const dirty =
     !!ws &&
-    (name.trim() !== ws.name || subjectName.trim() !== ws.subjectName || description.trim() !== (ws.description ?? ''));
+    (name.trim() !== ws.name ||
+      (!subjectMember && subjectName.trim() !== ws.subjectName) ||
+      description.trim() !== (ws.description ?? ''));
 
   async function save() {
     setFailure(null);
@@ -129,11 +133,13 @@ export default function Configuracao() {
             <Field label="Descrição: (opcional)" value={description} onChangeText={setDescription} multiline maxLength={500} inputRef={chain(1).inputRef} />
             <Field
               label="Nome do sujeito:"
-              value={subjectName}
+              value={subjectMember ? subjectMember.name : subjectName}
               onChangeText={setSubjectName}
               autoCapitalize="words"
               error={errors.subjectName}
               maxLength={100}
+              readOnly={!!subjectMember}
+              helper={subjectMember ? 'Vem da conta marcada como pessoa acompanhada, em Membros.' : undefined}
               {...chain(2)}
             />
 

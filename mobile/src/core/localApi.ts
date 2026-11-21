@@ -157,11 +157,14 @@ function requireMember(db: Db, userId: string, workspaceId: string): MemberRow {
 
 function summary(db: Db, ws: WorkspaceRow, role: Role): WorkspaceSummary {
   const creator = db.users.find((u) => u.id === ws.createdById);
+  // Com uma conta marcada como pessoa acompanhada (HU-11), o nome dela vale no lugar do digitado.
+  const subjectId = db.members.find((m) => m.workspaceId === ws.id && m.isSubject === true)?.userId;
+  const subjectUser = subjectId ? db.users.find((u) => u.id === subjectId) : undefined;
   return {
     id: ws.id,
     name: ws.name,
     description: ws.description,
-    subjectName: ws.subjectName,
+    subjectName: subjectUser?.name ?? ws.subjectName,
     createdBy: creator?.name ?? 'Usuário removido',
     memberCount: db.members.filter((m) => m.workspaceId === ws.id).length,
     createdAt: ws.createdAt,
@@ -373,7 +376,9 @@ export const localApi: EloApi = {
     const ws = db.workspaces.find((w) => w.id === workspaceId);
     if (!ws) throw new ApiError('NOT_FOUND', 'Workspace não encontrado.');
     ws.name = input.name.trim();
-    ws.subjectName = input.subjectName.trim();
+    // Com pessoa acompanhada marcada, o nome digitado não vale e não é sobrescrito.
+    if (!db.members.some((m) => m.workspaceId === workspaceId && m.isSubject === true))
+      ws.subjectName = input.subjectName.trim();
     ws.description = input.description.trim() || null;
     await save(db);
     return summary(db, ws, me.role);

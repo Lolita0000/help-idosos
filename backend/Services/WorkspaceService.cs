@@ -116,7 +116,10 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
         if (request.Description is not null)
             workspace.Description = request.Description.Trim();
 
-        if (request.SubjectName is not null)
+        // Com uma conta marcada como pessoa acompanhada, o nome exibido é o dela
+        // (ver ToResponse): o texto digitado na criação não vale mais e não é
+        // sobrescrito, para voltar a valer se a marca for tirada.
+        if (request.SubjectName is not null && !workspace.Members.Any(m => m.IsSubject))
             workspace.SubjectName = request.SubjectName.Trim();
 
         workspace.UpdatedAt = DateTime.UtcNow;
@@ -190,11 +193,19 @@ public sealed class WorkspaceService(AppDbContext db) : IWorkspaceService
                 .Select(m => RoleName(m.Role))
                 .FirstOrDefault();
 
+        // Quando a pessoa acompanhada tem conta e foi marcada (HU-11, RN-002), o
+        // nome dela vale no lugar do texto digitado ao criar o workspace. Lido na
+        // hora, e não copiado para o workspace: acompanha mudanças no perfil e,
+        // se a marca for tirada, volta o nome que foi digitado.
+        var subjectName = workspace.Members
+            .FirstOrDefault(m => m.IsSubject)?.User?.Name
+            ?? workspace.SubjectName;
+
         return new WorkspaceResponse(
             workspace.Id,
             workspace.Name,
             workspace.Description,
-            workspace.SubjectName,
+            subjectName,
             creator,
             workspace.Members.Count,
             myRole,

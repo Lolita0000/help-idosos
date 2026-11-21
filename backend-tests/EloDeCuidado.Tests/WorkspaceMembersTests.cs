@@ -438,6 +438,78 @@ public class WorkspaceMembersTests : IAsyncLifetime
         Assert.Empty(_db.AuditLogs);
     }
 
+    // Nome do sujeito: com uma conta marcada, vale o nome dela (HU-11)
+
+    private WorkspaceService Espacos() => new(_db);
+
+    private async Task<string> NomeDoSujeitoAsync(int viewerId) =>
+        (await Espacos().GetByIdAsync(_workspaceId, viewerId))!.SubjectName;
+
+    [Fact]
+    public async Task NomeDoSujeito_SemNinguemMarcado_EONomeDigitadoNaCriacao()
+    {
+        Assert.Equal("Joana Pereira", await NomeDoSujeitoAsync(_adminId));
+    }
+
+    [Fact]
+    public async Task NomeDoSujeito_MarcadoUmaConta_PassaASerONomeDoUsuario()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+
+        Assert.Equal("Julia Silva", await NomeDoSujeitoAsync(_adminId));
+        Assert.Equal("Julia Silva", await NomeDoSujeitoAsync(_robertoId));
+        var lista = await Espacos().GetByUserAsync(_adminId);
+        Assert.Equal("Julia Silva", Assert.Single(lista).SubjectName);
+    }
+
+    [Fact]
+    public async Task NomeDoSujeito_AcompanhaAMudancaDeNomeNoPerfil()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+        (await _db.Users.SingleAsync(u => u.Id == _juliaId)).Name = "Julia Souza Silva";
+        await _db.SaveChangesAsync();
+
+        Assert.Equal("Julia Souza Silva", await NomeDoSujeitoAsync(_adminId));
+    }
+
+    [Fact]
+    public async Task NomeDoSujeito_DesmarcarDevolveONomeDigitado_SemTerSidoApagado()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+        await ComoUsuario(_adminId).UnmarkSubject(_workspaceId, _juliaId);
+
+        Assert.Equal("Joana Pereira", await NomeDoSujeitoAsync(_adminId));
+    }
+
+    [Fact]
+    public async Task NomeDoSujeito_EditarOWorkspaceComSujeitoMarcado_NaoSobrescreveONomeDigitado()
+    {
+        await ComoUsuario(_adminId).MarkSubject(_workspaceId, _juliaId);
+
+        var editado = await Espacos().UpdateAsync(_workspaceId, new(null, "Outro Nome", null));
+
+        Assert.Equal("Julia Silva", editado!.SubjectName);
+        await ComoUsuario(_adminId).UnmarkSubject(_workspaceId, _juliaId);
+        Assert.Equal("Joana Pereira", await NomeDoSujeitoAsync(_adminId));
+    }
+
+    [Fact]
+    public async Task NomeDoSujeito_SemSujeitoMarcado_EditarContinuaFuncionando()
+    {
+        var editado = await Espacos().UpdateAsync(_workspaceId, new(null, "Joana P. Lima", null));
+
+        Assert.Equal("Joana P. Lima", editado!.SubjectName);
+    }
+
+    [Fact]
+    public async Task NomeDoSujeito_QuemEntraPeloConviteDoSujeito_DaONomeAoWorkspace()
+    {
+        var codigo = await GerarConviteAsync(paraSujeito: true);
+        await Convites().JoinAsync(codigo, _estranhoId);
+
+        Assert.Equal("Maria Souza", await NomeDoSujeitoAsync(_adminId));
+    }
+
     [Fact]
     public async Task Convite_ParaSujeito_QuemJaEhMembro_NaoMudaNada_ENaoGastaOCodigo()
     {
